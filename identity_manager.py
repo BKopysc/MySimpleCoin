@@ -1,9 +1,10 @@
-from ecdsa import SigningKey, VerifyingKey, SECP256k1
-from hashlib import sha256
+from ecdsa import SigningKey, SECP256k1
+from hashlib import sha256, new
 import base58
 import json
 import os
 from datetime import datetime
+
 
 class IdentityManager:
 
@@ -13,7 +14,8 @@ class IdentityManager:
         private_key = SigningKey.generate(curve=SECP256k1, hashfunc=sha256)
         public_key = private_key.verifying_key
 
-        public_base_58 = base58.b58encode(public_key.to_string())
+        public_double_hashed = self.__ripemd160(public_key.to_string()).digest()
+        public_base_58 = base58.b58encode(public_double_hashed)
 
         return private_key.to_string().hex(), public_base_58
 
@@ -27,13 +29,17 @@ class IdentityManager:
         with open(file_path, "w") as json_file:
             json_file.write(json_string)
 
-    def __hex_to_bytes(self, key):
-        nk = bytes.fromhex(key)
-        return nk
+    @staticmethod
+    def __hex_to_bytes(key):
+        return bytes.fromhex(key)
     
-    def __base58_to_bytes(self, key):
-        nk = base58.b58decode(key)
-        return nk
+    @staticmethod
+    def __base58_to_bytes(key):
+        return base58.b58decode(key)
+
+    @staticmethod
+    def __ripemd160(data):
+        return new('ripemd160', data)
 
     def open_wallet(self, file_path):
         try:
@@ -51,7 +57,7 @@ class IdentityManager:
             test_priv = SigningKey.from_string(self.__hex_to_bytes(data['private_key']), curve=SECP256k1, hashfunc=sha256)
             test_pub = self.__base58_to_bytes(data['public_address']) #VerifyingKey.from_string(self.__base58_to_bytes())
 
-            if (test_priv.verifying_key.to_string() != test_pub):
+            if (self.__ripemd160(test_priv.verifying_key.to_string()).digest() != test_pub):
                 print("Private key and public key are not related!")
                 return None
             
@@ -73,6 +79,3 @@ class IdentityManager:
         self.__save_wallet(owner_name, wallet_dict)
         return wallet_dict
 
-
-im = IdentityManager()
-im.open_wallet('test.cryptowallet')
