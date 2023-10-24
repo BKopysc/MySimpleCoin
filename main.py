@@ -21,10 +21,10 @@ def display_wallet_info():
     print(Fore.GREEN + "$$$$$$$$$$$$$$$$$$$$$$$$$")
 
 def title():
-    print(Fore.YELLOW + "\nWelcome to SimpleCoin\n")
+    print(Fore.YELLOW + "\nWelcome to SimpleCoin")
 
 def main_menu():
-    print("1. Create a new wallet")
+    print("\n1. Create a new wallet")
     print("2. Load an existing .cryptowallet file")
     print(Fore.RED + "3. Quit")
 
@@ -40,7 +40,7 @@ def create_wallet():
     username = get_input("Enter your username")
     global current_wallet
     current_wallet = identity_manager.create_wallet(username)
-    print("\n$$ Wallet created")
+    print(Fore.GREEN + "\n$$ Wallet created")
 
 def load_wallet():
     filepath = get_input("Enter file path", nl=False)

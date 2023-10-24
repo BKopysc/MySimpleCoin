@@ -4,6 +4,7 @@ import base58
 import json
 import os
 from datetime import datetime
+from colorama import init, Fore, Back
 
 
 class IdentityManager:
@@ -51,7 +52,7 @@ class IdentityManager:
             idx = 0 
             for obj in data.keys():
                 if(obj != self.wallet_pattern[idx]):
-                    print("Wrong wallet format!")
+                    print(Back.RED + "Wrong wallet format!")
                     return None
                 else:
                     idx += 1
@@ -60,15 +61,15 @@ class IdentityManager:
             test_pub = self.__base58_to_bytes(data['public_address']) #VerifyingKey.from_string(self.__base58_to_bytes())
 
             if (self.__ripemd160(test_priv.verifying_key.to_string()).digest() != test_pub):
-                print("Private key and public key are not related!")
+                print(Back.RED + "Private key and public key are not related!")
                 return None
             
             return data
         except FileNotFoundError:
-            print(f"File '{file_path}' not found.")
+            print(Back.RED + f"File '{file_path}' not found.")
             return None
         except json.JSONDecodeError as e:
-            print(f"Error decoding CryptoWallet: {e}")
+            print(Back.RED + f"Error decoding CryptoWallet: {e}")
             return None
 
     def create_wallet(self, owner_name):
