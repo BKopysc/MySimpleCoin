@@ -13,7 +13,7 @@ def clear_screen():
 
 def display_wallet_info():
     print(Fore.GREEN + "\n$$$$$$$$$$$$$$$$$$$$$$$$$")
-    print(Fore.LIGHTCYAN_EX + "Wallet Information:")
+    print(Fore.GREEN + "Wallet Information:")
     print(Fore.LIGHTCYAN_EX+ f"Created at: {current_wallet['created_at']}")
     print(Fore.LIGHTCYAN_EX + f"Owner: {current_wallet['owner_name']}")
     print(Fore.LIGHTCYAN_EX + f"Private Key: {current_wallet['private_key']}")
