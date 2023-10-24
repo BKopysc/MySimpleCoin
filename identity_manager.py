@@ -24,6 +24,8 @@ class IdentityManager:
         json_string = json.dumps(data, indent=4)
 
         if not os.path.exists(file_path):
+                if '/' not in file_path and '\\' not in file_path:
+                    file_path = "./" + file_path
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         with open(file_path, "w") as json_file:

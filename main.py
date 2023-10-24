@@ -1,4 +1,4 @@
-from colorama import init, Fore
+from colorama import init, Fore, Back
 import os
 from identity_manager import IdentityManager
 
@@ -12,43 +12,53 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def display_wallet_info():
-    print("\n$$$$$$$$$$$$$$$$$$$$$$$$$")
-    print("Wallet Information:")
-    print(f"Created at: {current_wallet['created_at']}")
-    print(f"Owner: {current_wallet['owner_name']}")
-    print(f"Private Key: {current_wallet['private_key']}")
-    print(f"Public address: {current_wallet['public_address']}")
-    print("$$$$$$$$$$$$$$$$$$$$$$$$$")
+    print(Fore.GREEN + "\n$$$$$$$$$$$$$$$$$$$$$$$$$")
+    print(Fore.LIGHTCYAN_EX + "Wallet Information:")
+    print(Fore.LIGHTCYAN_EX+ f"Created at: {current_wallet['created_at']}")
+    print(Fore.LIGHTCYAN_EX + f"Owner: {current_wallet['owner_name']}")
+    print(Fore.LIGHTCYAN_EX + f"Private Key: {current_wallet['private_key']}")
+    print(Fore.LIGHTCYAN_EX + f"Public address: {current_wallet['public_address']}")
+    print(Fore.GREEN + "$$$$$$$$$$$$$$$$$$$$$$$$$")
+
+def title():
+    print(Fore.YELLOW + "\nWelcome to SimpleCoin\n")
 
 def main_menu():
-    print("\nWelcome to SimpleCoin")
     print("1. Create a new wallet")
     print("2. Load an existing .cryptowallet file")
-    print("3. Quit")
+    print(Fore.RED + "3. Quit")
 
 def wallet_menu():
     print("\n-----------")
     print("1. Create new node")
     print("2. Connect to a node")
     print("3. Show wallet information")
-    print("4. Quit")
+    print(Fore.RED + "4. Quit")
     print("-----------\n")
 
 def create_wallet():
-    username = input(">>> Enter your username: ")
+    username = get_input("Enter your username")
     global current_wallet
     current_wallet = identity_manager.create_wallet(username)
     print("\n$$ Wallet created")
 
 def load_wallet():
-    filepath = input(">>> Enter filepath: ")
+    filepath = get_input("Enter file path", nl=False)
     wallet_data = identity_manager.open_wallet(filepath)
     if(wallet_data == None ):
         return False
     global current_wallet
     current_wallet = wallet_data
-    print("\n$$ Wallet loaded")
+    print(Fore.GREEN + "\n$$ Wallet loaded")
     return True
+
+def get_input(option="Select an option", nl=True):
+    if(nl):
+        print(" ")
+    
+    input_str = ">>> " + option + ": "
+
+    return input(Fore.CYAN + input_str)
 
 def create_node():
     print("Create!")
@@ -58,33 +68,39 @@ def connect_to_node():
 
 
 
-# Main program loop
-while True:
-    main_menu()
-    choice = input("\n>>> Select an option: ")
 
-    if choice == "1":
+#--------------- MAIN LOOP --------------------#
+
+title()
+
+while True: #==== MAIN MENU ====#
+    main_menu() #1,2,3,4
+    choice = get_input()
+
+    if choice == "1": #----- CREATE WALLET -----#
         create_wallet()
-    elif choice == "2":
+    elif choice == "2": #----- LOAD WALLET -----#
         state = load_wallet()
         if(state == False):
             continue
-    elif choice == "3":
+    elif choice == "3": #----- QUIT -----#
         quit()
     else:
+        print(Back.RED + "Invalid choice. Please select a valid option.\n")
         continue
 
-    while True:
-        wallet_menu()
-        choice = input("\n>>> Select an option: ")
+    while True: #==== WALLET MENU ====#
+        wallet_menu() #1,2,3,44
+        choice = get_input(nl=False)
 
-        if choice == "1":
+        if choice == "1": #----- CREATE NEW NODE -----#
             create_node()
-        elif choice == "2":
+        elif choice == "2": #----- CONNECT TO NEW NODE ---- #
             connect_to_node()
-        elif choice == "3":
+        elif choice == "3": #----- DISPLAY WALLET INFO -----#
             display_wallet_info()
-        elif choice == "4":
+        elif choice == "4": #----- QUIT -----#
             quit()
         else:
-            print("Invalid choice. Please select a valid option.")
+            print(Back.RED + "Invalid choice. Please select a valid option.")
+            continue
