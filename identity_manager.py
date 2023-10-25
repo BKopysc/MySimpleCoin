@@ -15,7 +15,6 @@ class IdentityManager:
         private_key = SigningKey.generate(curve=SECP256k1, hashfunc=sha256)
         public_key = private_key.verifying_key
 
-        # public_double_hashed = self.__ripemd160(public_key.to_string()).digest()
         public_base_58 = base58.b58encode(public_key.to_string())
 
         return private_key.to_string().hex(), public_base_58
@@ -60,7 +59,6 @@ class IdentityManager:
             test_priv = SigningKey.from_string(self.__hex_to_bytes(data['private_key']), curve=SECP256k1, hashfunc=sha256)
             test_pub = self.__base58_to_bytes(data['public_address']) #VerifyingKey.from_string(self.__base58_to_bytes())
 
-            # if (self.__ripemd160(test_priv.verifying_key.to_string()).digest() != test_pub):
             if (test_priv.verifying_key.to_string() != test_pub):
                 print(Back.RED + "Private key and public key are not related!")
                 return None
