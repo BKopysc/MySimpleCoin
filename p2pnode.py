@@ -67,7 +67,7 @@ class P2PNode (Node):
     
     def __sign_with_private_key(self, data):
         priv_k = SigningKey.from_string(self.__hex_to_bytes(self.private_key), curve=SECP256k1, hashfunc=sha256)
-        signed = priv_k.sign(data.encode("utf-8"))
+        signed = priv_k.sign_deterministic(data.encode("utf-8"), hashfunc=sha256)
         return signed.hex()
 
 
@@ -77,7 +77,7 @@ class P2PNode (Node):
         public_key = VerifyingKey.from_string(decrypted_public_key, curve=SECP256k1, hashfunc=sha256)
         print(public_key)
         try:
-            public_key.verify(self.__hex_to_bytes(signature),self.__hex_to_bytes(self.correct_auth_signature))
+            public_key.verify(self.__hex_to_bytes(signature), self.correct_auth_signature.encode('utf-8'), sha256)
             return True
         except:
             return False
