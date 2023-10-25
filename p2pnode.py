@@ -75,7 +75,7 @@ class P2PNode (Node):
         #weryfikacja podpisu
         decrypted_public_key = self.__base58_to_bytes(public_address)
         public_key = VerifyingKey.from_string(decrypted_public_key, curve=SECP256k1, hashfunc=sha256)
-        print(public_key)
+        print("\nSignature: " + signature + "\n")
         try:
             public_key.verify(self.__hex_to_bytes(signature), self.correct_auth_signature.encode('utf-8'), sha256)
             return True

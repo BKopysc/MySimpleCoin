@@ -17,7 +17,14 @@ time.sleep(1)
 
 seed_n.start()
 
-time.sleep(120) # Create here your main loop of the application
+while True:
+    quit_com = input("Press 'q' to quit: ")
+    if(quit_com == "q"):
+        print("exiting....")
+        break
+    else:
+        print("Wrong command!")
+        continue
 
 seed_n.stop()
 

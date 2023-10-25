@@ -53,13 +53,15 @@ def load_wallet():
     print(Fore.GREEN + "\n$$ Wallet loaded")
     return True
 
-def get_input(option="Select an option", nl=True):
+def get_input(option="Select an option", nl=True, clr=False):
     if(nl):
         print(" ")
-    
-    input_str = ">>> " + option + ": "
+    if(clr == False):
+        input_str = Fore.CYAN + ">>> " + option + ": "
+    else:
+        input_str = option
 
-    return input(Fore.CYAN + input_str)
+    return input(input_str)
 
 def create_node():
     ip = get_input("Enter IP address", nl=False)
@@ -67,8 +69,21 @@ def create_node():
     node = P2PNode(ip, int(port), seed_node_info = {"ip": "127.0.0.1", "port": 6000},
         private_key = current_wallet["private_key"],
         id = current_wallet["public_address"])
-    sleep(60)
+    
+    while(True):
+        text = Back.BLUE + "@ Press 'q' to quit\n"
+        quit_com = get_input(text, nl=False, clr=True)
+        print(Back.RESET)
+        if(quit_com == "q"):
+            print(Back.BLUE + "@ exiting node....")
+            print(Back.RESET)
+            break
+        else:
+            print(Back.RED + "@ Wrong command!")
+            print(Back.RESET)
+            continue
     node.stop()
+    sleep(8)
 
 def connect_to_node():
     print("Connect!")
