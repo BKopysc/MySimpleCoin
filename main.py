@@ -1,7 +1,8 @@
 from colorama import init, Fore, Back
 import os
 from identity_manager import IdentityManager
-
+from p2pnode import P2PNode
+from time import sleep
 
 
 init(autoreset=True)
@@ -61,7 +62,13 @@ def get_input(option="Select an option", nl=True):
     return input(Fore.CYAN + input_str)
 
 def create_node():
-    print("Create!")
+    ip = get_input("Enter IP address", nl=False)
+    port = get_input("Enter port", nl=False)
+    node = P2PNode(ip, int(port), seed_node_info = {"ip": "127.0.0.1", "port": 6000},
+        private_key = current_wallet["private_key"],
+        id = current_wallet["public_address"])
+    sleep(60)
+    node.stop()
 
 def connect_to_node():
     print("Connect!")
