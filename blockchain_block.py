@@ -3,7 +3,6 @@ import time
 from hashlib import sha256
 
 # Testowo, nie wiem czy dobrze
-# https://www.geeksforgeeks.org/implementing-the-proof-of-work-algorithm-in-python-for-blockchain-mining/
 
 class BlockchainBlock():
     # Constructor

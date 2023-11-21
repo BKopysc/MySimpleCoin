@@ -1,7 +1,9 @@
 import time
+import uuid
 
 class TransactionData:
     def __init__(self, sender_name: str, receiver_name:str , amount: float, timestamp: float = None):
+        self.id: int = uuid.uuid4().int
         self.sender_name = sender_name
         self.receiver_name = receiver_name
         self.amount = amount
@@ -9,6 +11,9 @@ class TransactionData:
             self.timestamp = time.time()
         else:
             self.timestamp = timestamp
+
+    def set_id(self, id):
+        self.id = id
 
     def get_transaction_data_as_dict(self):
         return({"sender_name": self.sender_name, "receiver_name": self.receiver_name, "amount": self.amount, "timestamp": self.timestamp})
