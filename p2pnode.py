@@ -4,6 +4,8 @@ from colorama import Fore, Style
 from ecdsa import SigningKey, VerifyingKey , SECP256k1
 from hashlib import sha256, new
 import base58
+from blockchain import Blockchain
+from transaction_data import TransactionData
 
 class P2PNode (Node):
     # Python class constructor
@@ -13,6 +15,7 @@ class P2PNode (Node):
         self.private_key = private_key
         self.available_nodes = dict()
         self.nodes_connected = dict()
+        self.blockchain = Blockchain()
         self.correct_auth_signature = "auth_ok"
         self.start()
         time.sleep(1)
@@ -53,10 +56,20 @@ class P2PNode (Node):
                     print(Fore.GREEN + ">>>> Node verified! [" + connected_node.id + "]")
                 else:
                     print(Fore.RED + ">>>> Node not verified! [" + connected_node.id + "]")
-
+            elif(data['_type'] == "new_transaction"):
+                self.add_transaction_from_network(data["transaction"])
+            elif(data['_type'] == "new_block"):
+                self.validate_and_add_new_block(data["block"])
+            elif(data['_type'] == "pop_transaction"):
+                self.pop_transaction_from_network(data["transaction_id"])
+            elif(data['_type'] == "disconnect"):
+                #self.available_nodes.pop(connected_node.id)
+                pass
+            
                 #print(Fore.YELLOW + "signature: " + data["signed_signature"])
 
-        
+    # ------- AUTHENTICATION METHODS ------- #
+
     @staticmethod
     def __hex_to_bytes(key):
         return bytes.fromhex(key)
@@ -114,5 +127,51 @@ class P2PNode (Node):
     def node_request_to_stop(self):
         self.send_to_nodes({"_type": "disconnect"})
         print(Fore.RED + "node is requested to stop!")
+
+# ------- BLOCKCHAIN METHODS ------- #
+
+    def show_transactions(self):
+        return self.blockchain.get_pending_transactions_str()
+    
+    def add_transaction(self, sender, receiver, amount):
+        transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount)
+        self.blockchain.add_transaction(transaction.get_transaction_data_as_dict())
+        self.send_to_nodes({"_type": "new_transaction", "transaction": transaction})
+
+    def mine_transaction(self, transaction_id):
+        miner_name = self.id
+        # Mine block
+        mine_result = self.blockchain.mine_pending_transactions(miner_name, [transaction_id])
+
+        if(mine_result["status"] == "success"):
+            if(self.blockchain.check_if_not_mined(transaction_id) == False):
+                print(Fore.RED + "Error: Transaction already mined!")
+                return
+            else:
+                self.send_to_nodes({"_type": "new_block", "block": mine_result["block"]})
+                self.send_to_nodes({"_type": "new_transaction", "transaction": mine_result["block"].transactions[0]})
+                self.send_to_nodes({"_type": "pop_transaction", "transaction_id": [transaction_id]})
+                print(Fore.GREEN + "Block mined! " + mine_result["block"].get_block_as_str())
+        else:
+            print(Fore.RED + "Error: " + mine_result["message"])
+
+    def add_transaction_from_network(self, transaction):
+        self.blockchain.add_transaction(transaction)
+
+    def validate_and_add_new_block(self, block):
+        res = self.blockchain.validate_new_block(block)
+        if(res == False):
+            print(Fore.RED + "Error: Block not valid!")
+
+    def pop_transaction_from_network(self, transaction_id):
+        self.blockchain.pop_transaction(transaction_id)
+
+    def get_blockchain_as_list(self):
+        return self.blockchain.get_blockchain_as_list()
+    
+    
+
+
+
 
 

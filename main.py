@@ -71,13 +71,22 @@ def create_node():
         id = current_wallet["public_address"])
     
     while(True):
-        text = Back.BLUE + "@ Press 'q' to quit\n"
-        quit_com = get_input(text, nl=False, clr=True)
+        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 'm' to Mine Transaction ID\n"
+        net_com = get_input(text, nl=False, clr=True)
         print(Back.RESET)
-        if(quit_com == "q"):
+        if(net_com == "q"):
             print(Back.BLUE + "@ exiting node....")
             print(Back.RESET)
             break
+        elif(net_com == "t"):
+            print(Back.BLUE + "@ Showing transactions....")
+            print(Back.RESET)
+        elif(net_com == "a"):
+            print(Back.BLUE + "@ Adding transaction....")
+            print(Back.RESET)
+        elif(net_com == "m"):
+            print(Back.BLUE + "@ Mining transaction....")
+            print(Back.RESET)
         else:
             print(Back.RED + "@ Wrong command!")
             print(Back.RESET)

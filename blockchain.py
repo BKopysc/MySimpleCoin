@@ -7,6 +7,7 @@ class Blockchain():
         self.difficulty = 5
         self.reward = 20
         self.pending_transactions = []
+        self.previously_mined_transactions = []
         self.chain = [self.__create_genesis_block()]
 
     def __create_genesis_block(self):
@@ -21,8 +22,18 @@ class Blockchain():
             block = BlockchainBlock(previous_hash=current_block.get_hash(), transactions=transaction, index=current_block.index+1)
             self.chain.append(block)
     
+    def add_received_block(self, block):
+        self.chain.append(block)
+
     def add_transaction(self, transaction):
         self.pending_transactions.append(transaction)
+
+    def pop_transaction(self, transactionId):
+        for transaction in self.pending_transactions:
+            if(transaction.id == transactionId):
+                self.pending_transactions.remove(transaction)
+                return(self.__return_status("success", "Transaction removed"))
+        return(self.__return_status("error", "Transaction not found"))
 
     def add_many_transactions(self, transactions):
         for transaction in transactions:
@@ -62,6 +73,7 @@ class Blockchain():
         #Remove transactions from pending
         for transaction in todo_transactions:
             self.pending_transactions.remove(transaction)
+            self.previously_mined_transactions.append(transaction)
 
         if(len(todo_transactions) == 0):
             return(self.__return_status("error", "No transactions to mine"))
@@ -75,13 +87,13 @@ class Blockchain():
         rewardTransaction = TransactionData(sender_name="network", receiver_name=miner_name, amount=self.reward)
         self.pending_transactions.append(rewardTransaction)
 
-        print("Block mined!" + " miner: " + miner_name)
+        #print("Block mined!" + " miner: " + miner_name)
 
         for block in self.chain:
             if(block.get_hash() == newBlock.get_hash()):
                 return(self.__return_status("error", "Block already exists"))
         self.chain.append(newBlock)
-        
+
         return(self.__return_status("success", "Block mined!"))
 
     def get_pending_transactions_str(self):
@@ -90,5 +102,19 @@ class Blockchain():
     def __return_status(self, status, message):
         return({'status': status, 'message': message})
         
+    def check_if_not_mined(self, transaction_id):
+        for transaction in self.previously_mined_transactions:
+            if(transaction.id == transaction_id):
+                return(True)
+        return(False)
+    
+    def validate_new_block(self, block: BlockchainBlock):
+        if(block.previous_hash != self.get_last_block().get_hash()):
+            return(False)
+        if(block.get_hash() != block.generate_hash()):
+            return(False)
+        
+        self.add_received_block(block)
+        return(True)
 
         
