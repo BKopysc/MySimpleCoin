@@ -6,7 +6,7 @@ class Blockchain():
         self.head = None
         self.difficulty = 5
         self.reward = 20
-        self.pending_transactions = []
+        self.pending_transactions: list[TransactionData] = []
         self.previously_mined_transactions = []
         self.chain = [self.__create_genesis_block()]
 
@@ -25,7 +25,7 @@ class Blockchain():
     def add_received_block(self, block):
         self.chain.append(block)
 
-    def add_transaction(self, transaction):
+    def add_transaction(self, transaction: TransactionData):
         self.pending_transactions.append(transaction)
 
     def pop_transaction(self, transactionId):
@@ -96,8 +96,13 @@ class Blockchain():
 
         return(self.__return_status("success", "Block mined!"))
 
-    def get_pending_transactions_str(self):
-        return(list(map(lambda x: x.get_transaction_data_as_str(), self.pending_transactions)))
+    def get_pending_transactions(self):
+        temp_list = []
+        for transaction in self.pending_transactions:
+            temp_list.append(transaction.get_transaction_data_as_dict())
+
+        return(temp_list)
+        
     
     def __return_status(self, status, message):
         return({'status': status, 'message': message})
@@ -116,5 +121,37 @@ class Blockchain():
         
         self.add_received_block(block)
         return(True)
+    
+    def load_all_from_dict(self, blockchain_dict):
+        self.head = blockchain_dict["head"]
+        self.difficulty = blockchain_dict["difficulty"]
+        self.reward = blockchain_dict["reward"]
 
+        self.pending_transactions = []
+        for transaction_dict in blockchain_dict["pending_transactions"]:
+            transaction = TransactionData()
+            transaction.load_all_from_dict(transaction_dict)
+            self.pending_transactions.append(transaction)
         
+        self.previously_mined_transactions = []
+
+        self.chain = []
+        for block_dict in blockchain_dict["chain"]:
+            block = BlockchainBlock()
+            block.load_all_from_dict(block_dict)
+            self.chain.append(block)
+
+    def get_blockchain_as_dict(self):
+        return({"head": self.head, 
+                "difficulty": self.difficulty, 
+                "reward": self.reward, 
+                "pending_transactions": self.pending_transactions, 
+                "chain": self.chain})
+    
+    def verify_hash_obj(self):
+        b_hash = hash({"head": self.head,
+                       "difficulty": self.difficulty,
+                       "reward": self.reward,
+                       "pending_transactions": self.pending_transactions,
+                       "chain": self.chain})
+        return(b_hash)

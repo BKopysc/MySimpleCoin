@@ -2,8 +2,6 @@ from transaction_data import TransactionData
 import time
 from hashlib import sha256
 
-# Testowo, nie wiem czy dobrze
-
 class BlockchainBlock():
     # Constructor
     def __init__(self, previous_hash:str = None, transactions: [] = [], index: int = 0):
@@ -43,6 +41,18 @@ class BlockchainBlock():
         while(self.hash[0:difficulty] != '0'*difficulty):
             self.nonce += 1
             self.hash = self.generate_hash()
+
+    def load_all_from_dict(self, block_dict):
+        self.index = block_dict["index"]
+        self.nonce = block_dict["nonce"]
+        self.timestamp = block_dict["timestamp"]
+        self.previous_hash = block_dict["previous_hash"]
+        self.hash = block_dict["hash"]
+        self.transactions = []
+        for transaction_dict in block_dict["transactions"]:
+            transaction = TransactionData()
+            transaction.load_all_from_dict(transaction_dict)
+            self.transactions.append(transaction)
     
         
 

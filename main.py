@@ -63,15 +63,21 @@ def get_input(option="Select an option", nl=True, clr=False):
 
     return input(input_str)
 
+def node_callback(event, node, connected_node, data):
+    print("Event: " + event)
+    print("Node: " + node)
+    print("Connected Node: " + connected_node)
+    print("Data: " + str(data))
+
 def create_node():
     ip = get_input("Enter IP address", nl=False)
     port = get_input("Enter port", nl=False)
     node = P2PNode(ip, int(port), seed_node_info = {"ip": "127.0.0.1", "port": 6000},
         private_key = current_wallet["private_key"],
-        id = current_wallet["public_address"])
+        id = current_wallet["public_address"], callback=node_callback)
     
     while(True):
-        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 'm' to Mine Transaction ID\n"
+        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING"
         net_com = get_input(text, nl=False, clr=True)
         print(Back.RESET)
         if(net_com == "q"):
@@ -80,12 +86,25 @@ def create_node():
             break
         elif(net_com == "t"):
             print(Back.BLUE + "@ Showing transactions....")
+            trans = node.get_transactions()
+            print(Back.BLACK + str(trans))
             print(Back.RESET)
         elif(net_com == "a"):
             print(Back.BLUE + "@ Adding transaction....")
+            tran_input = get_input("Enter sender", nl=False)
+            tran_input2 = get_input("Enter receiver", nl=False)
+            tran_input3 = get_input("Enter amount", nl=True)
+            node.add_transaction(tran_input, tran_input2, float(tran_input3))
             print(Back.RESET)
         elif(net_com == "m"):
-            print(Back.BLUE + "@ Mining transaction....")
+            print(Back.BLUE + "@ Mining")
+            mine_input = get_input("Enter transaction ID", nl=True)
+            print(Back.BLUE + "!@ Mining started...")
+            node.mine_transaction(mine_input)
+            print(Back.RESET)
+        elif(net_com == "p"):
+            print(Back.BLUE + "@ PING....")
+            node.send_ping()
             print(Back.RESET)
         else:
             print(Back.RED + "@ Wrong command!")
