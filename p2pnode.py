@@ -6,6 +6,7 @@ from hashlib import sha256, new
 import base58
 from blockchain import Blockchain
 from transaction_data import TransactionData
+from blockchain_block import BlockchainBlock
 
 class P2PNode (Node):
     # Python class constructor
@@ -53,28 +54,42 @@ class P2PNode (Node):
                 self.available_nodes = data["node_registry"]
                 print(Fore.CYAN + ">> New list: " + str(self.available_nodes))
                 self.__connect_to_new_nodes()
+
             elif(data['_type'] == "verify_node"):
                 res = self.__verify_signature(data["signed_signature"], connected_node.id)
                 if(res):
                     print(Fore.GREEN + ">>>> Node verified! [" + connected_node.id + "]")
                 else:
                     print(Fore.RED + ">>>> Node not verified! [" + connected_node.id + "]")
+
             elif(data['_type'] == "ping"):
                 self.send_pong()
+
             elif(data['_type'] == "pong"):
                 print(Fore.YELLOW + ">>>> PONG received!")
+
             elif(data['_type'] == "new_transaction"):
                 print(Fore.YELLOW + ">>>> New transaction received!")
                 self.load_transaction_from_network(data["transaction"])
+
             elif(data['_type'] == "new_block"):
+                print(Fore.YELLOW + ">>>> New block received!")
                 self.validate_and_load_new_block(data["block"])
+
             elif(data['_type'] == "pop_transaction"):
-                self.pop_transaction_from_network(data["transaction_id"])
+                print(Fore.YELLOW + ">>>> Pop transaction received!")
+                pop_list = data["transaction_id"]
+                for transaction_id in pop_list:
+                    self.pop_transaction_from_network(transaction_id)
+
             elif(data['_type'] == "disconnect"):
                 #self.available_nodes.pop(connected_node.id)
                 pass
+
             elif(data['_type'] == "new_blockchain"):
+                print(Fore.YELLOW + ">>>> New blockchain received!")
                 self.load_blockchain_from_dict(data["blockchain"])
+
             else:
                 print(Fore.RED + ">>>> Received Unknown data type: " + str(data))
             
@@ -111,6 +126,10 @@ class P2PNode (Node):
         signed_signature = self.__sign_with_private_key(self.correct_auth_signature)
         self.send_to_nodes({"_type": "verify_node", "signed_signature": signed_signature}, exclude=[self.id])
 
+
+    def connect_to_new_node(self, ip, port):
+        self.connect_with_node(ip, port)
+        time.sleep(1)
 
     def __connect_to_new_nodes(self):
         for node_id, node_data in self.available_nodes.items():
@@ -160,16 +179,20 @@ class P2PNode (Node):
                 print(Fore.RED + "Error: Transaction already mined!")
                 return
             else:
-                self.send_to_nodes({"_type": "new_block", "block": mine_result["block"]})
-                self.send_to_nodes({"_type": "new_transaction", "transaction": mine_result["block"].transactions[0]})
+                mined_block: BlockchainBlock = mine_result["block"]
+                rewardTransaction: TransactionData = mine_result["new_transactions"]
+                self.send_to_nodes({"_type": "new_block", "block": mined_block.get_block_as_dict()}, exclude=[self.id])
+                self.send_to_nodes({"_type": "new_transaction", "transaction": rewardTransaction.get_transaction_data_as_dict()}, exclude=[self.id])
                 self.send_to_nodes({"_type": "pop_transaction", "transaction_id": [transaction_id]})
-                print(Fore.GREEN + "Block mined! " + mine_result["block"].get_block_as_str())
+                print(Fore.GREEN + "Block mined! " + str(mined_block.get_block_as_dict()))
         else:
             print(Fore.RED + "Error: " + mine_result["message"])
 
     def load_transaction_from_network(self, transaction_dict):
         transaction = TransactionData()
         transaction.load_all_from_dict(transaction_dict)
+        if(transaction.id in self.blockchain.get_pending_transactions()):
+            return
         self.blockchain.add_transaction(transaction)
 
     def load_blockchain_from_dict(self, blockchain_dict):
@@ -191,8 +214,6 @@ class P2PNode (Node):
     def __send_blockchain(self):
         self.send_to_nodes({"_type": "new_blockchain", "blockchain": self.blockchain.get_blockchain_as_dict()})
 
-    def get_blockchain_as_list(self):
-        return self.blockchain.get_blockchain_as_list()
     
 
     

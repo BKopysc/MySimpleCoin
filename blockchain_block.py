@@ -13,7 +13,7 @@ class BlockchainBlock():
         self.previous_hash = previous_hash
 
         # Body
-        self.transactions = transactions
+        self.transactions: list[TransactionData] = transactions
 
         # Hash
         self.hash = self.generate_hash()
@@ -21,8 +21,11 @@ class BlockchainBlock():
     
     def get_block_as_dict(self):
         # self to dict
-        return({ 'index': self.index, 'nonce': self.nonce, 'transactions': self.transactions,
-                 'timestamp': self.timestamp, 'previous_hash': self.previous_hash, 'hash': self.hash})
+        block_dict = { 'index': self.index, 'nonce': self.nonce, 'transactions': [],
+                 'timestamp': self.timestamp, 'previous_hash': self.previous_hash, 'hash': self.hash}
+        for transaction in self.transactions:
+            block_dict["transactions"].append(transaction.get_transaction_data_as_dict())
+        return(block_dict)
     
     def __get_dict_to_hash(self):
         # self to dict

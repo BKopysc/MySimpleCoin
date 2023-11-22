@@ -77,18 +77,21 @@ def create_node():
         id = current_wallet["public_address"], callback=node_callback)
     
     while(True):
-        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING"
+        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING\n@Press 'b' to Show Blockchain\n"
         net_com = get_input(text, nl=False, clr=True)
         print(Back.RESET)
+
         if(net_com == "q"):
             print(Back.BLUE + "@ exiting node....")
             print(Back.RESET)
             break
+
         elif(net_com == "t"):
             print(Back.BLUE + "@ Showing transactions....")
             trans = node.get_transactions()
             print(Back.BLACK + str(trans))
             print(Back.RESET)
+
         elif(net_com == "a"):
             print(Back.BLUE + "@ Adding transaction....")
             tran_input = get_input("Enter sender", nl=False)
@@ -96,16 +99,24 @@ def create_node():
             tran_input3 = get_input("Enter amount", nl=True)
             node.add_transaction(tran_input, tran_input2, float(tran_input3))
             print(Back.RESET)
+
         elif(net_com == "m"):
             print(Back.BLUE + "@ Mining")
             mine_input = get_input("Enter transaction ID", nl=True)
-            print(Back.BLUE + "!@ Mining started...")
-            node.mine_transaction(mine_input)
+            print(Back.BLUE + "!! Mining started...")
+            node.mine_transaction(int(mine_input))
             print(Back.RESET)
+
+        elif(net_com == "b"):
+            print(Back.BLUE + "@ Showing blockchain....")
+            print(Back.BLACK + str(node.blockchain.get_blockchain_as_dict()))
+            print(Back.RESET)
+
         elif(net_com == "p"):
             print(Back.BLUE + "@ PING....")
             node.send_ping()
             print(Back.RESET)
+
         else:
             print(Back.RED + "@ Wrong command!")
             print(Back.RESET)
@@ -113,8 +124,10 @@ def create_node():
     node.stop()
     sleep(8)
 
-def connect_to_node():
-    print("Connect!")
+def connect_to_node(main_node: P2PNode):
+    ip = get_input("Enter IP address", nl=False)
+    port = get_input("Enter port", nl=False)
+    main_node.connect_to_new_node(ip, int(port))
 
 
 
