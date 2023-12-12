@@ -7,7 +7,6 @@ class BlockchainBlock():
     def __init__(self, previous_hash:str = None, transactions: [] = [], index: int = 0):
 
         # Header
-        self.index = index
         self.nonce = 0
         self.timestamp = time.time()
         self.previous_hash = previous_hash
@@ -21,7 +20,7 @@ class BlockchainBlock():
     
     def get_block_as_dict(self):
         # self to dict
-        block_dict = { 'index': self.index, 'nonce': self.nonce, 'transactions': [],
+        block_dict = { 'nonce': self.nonce, 'transactions': [],
                  'timestamp': self.timestamp, 'previous_hash': self.previous_hash, 'hash': self.hash}
         for transaction in self.transactions:
             block_dict["transactions"].append(transaction.get_transaction_data_as_dict())
@@ -46,7 +45,6 @@ class BlockchainBlock():
             self.hash = self.generate_hash()
 
     def load_all_from_dict(self, block_dict):
-        self.index = block_dict["index"]
         self.nonce = block_dict["nonce"]
         self.timestamp = block_dict["timestamp"]
         self.previous_hash = block_dict["previous_hash"]

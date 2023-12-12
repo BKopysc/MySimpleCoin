@@ -1,26 +1,43 @@
 from blockchain_block import BlockchainBlock
 from transaction_data import TransactionData
 from hashlib import sha256
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+BLOCK_REWARD = float(os.getenv("BLOCK_REWARD"))
 
 class Blockchain():
     def __init__(self):
         self.head = None
         self.difficulty = 5
-        self.reward = 20
+        self.reward = BLOCK_REWARD
         self.pending_transactions: list[TransactionData] = []
         self.previously_mined_transactions = []
         self.chain = [self.__create_genesis_block()]
 
     def __create_genesis_block(self):
         # Genesis block
-        self.head = BlockchainBlock(previous_hash=None, transactions=[], index=0)
+        genesis_block = BlockchainBlock(previous_hash=None, transactions=[])
+        self.head = genesis_block
         return(self.head)
 
 
-    def add_block(self, transaction):
+    def add_block(self, transactions: list[TransactionData]):
         current_block = self.get_last_block()
-        if(current_block != None):  
-            block = BlockchainBlock(previous_hash=current_block.get_hash(), transactions=transaction, index=current_block.index+1)
+        if(current_block != None):
+            new_transactions = []
+
+            base_fees = 0
+            for transaction in transactions:
+                base_fees += transaction.fees
+                new_transactions.append(transaction)
+            
+            coinbase_trans = TransactionData(is_coinbase=True, fees=base_fees)
+            # insert at start of list
+            new_transactions.insert(coinbase_trans, 0)
+
+            block = BlockchainBlock(previous_hash=current_block.get_hash(), transactions=new_transactions)
             self.chain.append(block)
     
     def add_received_block(self, block):
@@ -93,7 +110,7 @@ class Blockchain():
             return(self.__return_status("error", "No transactions to mine"))
         
         # Create new block and mine it
-        newBlock = BlockchainBlock(previous_hash=self.get_last_block().get_hash(), transactions=todo_transactions, index=self.get_last_block().index+1)
+        newBlock = BlockchainBlock(previous_hash=self.get_last_block().get_hash(), transactions=todo_transactions)
         newBlock.mine_block(self.difficulty)
 
         

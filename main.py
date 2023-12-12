@@ -96,7 +96,8 @@ def create_node():
             print(Back.BLUE + "@ Adding transaction....")
             tran_input = get_input("Enter sender", nl=False)
             tran_input2 = get_input("Enter receiver", nl=False)
-            tran_input3 = get_input("Enter amount", nl=True)
+            tran_input3 = get_input("Enter amount", nl=False)
+            tran_input4 = get_input("Enter fees", nl=True)
             node.add_transaction(tran_input, tran_input2, float(tran_input3))
             print(Back.RESET)
 
