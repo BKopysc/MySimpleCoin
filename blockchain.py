@@ -129,8 +129,12 @@ class Blockchain():
     
     def validate_new_block(self, block: BlockchainBlock):
         if(block.previous_hash != self.get_last_block().get_hash()):
+            print("Error: Previous hash not valid")
+            print(block.previous_hash)
+            print(self.get_last_block.get_hash())
             return(False)
         if(block.get_hash() != block.generate_hash()):
+            print("Error: Hash not valid")
             return(False)
         
         self.add_received_block(block)

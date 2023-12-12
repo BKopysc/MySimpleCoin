@@ -1,6 +1,10 @@
 Prosty łańcuch bloków (10p) - 3 tyg. (termin oddania: 22.11.2023),
 x Tworzenie bloków
 x Walidacja integralności
-o Ustalenie protokołu wymiany danych
-o Synchronizacja węzłów
-o Osiągnięcie konsensusu (metoda proof-of-work)
+x Ustalenie protokołu wymiany danych
+x Synchronizacja węzłów
+x Osiągnięcie konsensusu (metoda proof-of-work)
+
+o Tworzenie transakcji, np. w formacie json (pierwszą transakcją w liście powinna być transakcja coinbase tworząca nowe "monety")
+o Walidacja transakcji pod kątem double-spending
+o Obliczanie aktualnych sald na kontach

@@ -16,7 +16,7 @@ class BlockchainBlock():
         self.transactions: list[TransactionData] = transactions
 
         # Hash
-        self.hash = self.generate_hash()
+        self.hash = ""
 
     
     def get_block_as_dict(self):
