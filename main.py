@@ -85,6 +85,7 @@ def create_node():
     global wallet_path
     ip = get_input("Enter IP address", nl=False)
     port = get_input("Enter port", nl=False)
+    id = current_wallet["public_address"]
     node = P2PNode(ip, int(port), seed_node_info = {"ip": "127.0.0.1", "port": 6000},
         private_key = current_wallet["private_key"],
         id = current_wallet["public_address"], callback=node_callback, wallet_path=wallet_path)
@@ -117,6 +118,10 @@ def create_node():
             print(Back.BLUE + "@ Sending money....")
             tran_input2 = get_input("Enter receiver", nl=False)
             tran_input3 = get_input("Enter amount", nl=True)
+            if(tran_input2 == id):
+                print(Back.RED + "@ You can't send money to yourself!")
+                print(Back.RESET)
+                continue
             node.send_money(tran_input2, float(tran_input3))
             print(Back.RESET)
 

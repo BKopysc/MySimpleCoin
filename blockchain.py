@@ -64,6 +64,12 @@ class Blockchain():
         for transaction in transactions:
             self.pending_transactions.append(transaction)
 
+    def get_block_by_hash(self, block_hash: str):
+        for block in self.chain:
+            if(block.get_hash() == block_hash):
+                return(block)
+        return(None)
+
     def get_blockchain_as_dict(self):
         blockchain_dict = {
             "head": self.head.get_block_as_dict(),

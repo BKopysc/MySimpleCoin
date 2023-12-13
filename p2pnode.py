@@ -91,6 +91,12 @@ class P2PNode (Node):
                 print(Fore.YELLOW + ">>>> New blockchain received!")
                 self.load_blockchain_from_dict(data["blockchain"])
 
+            elif(data['_type'] == "mining_result_confirmed"):
+                print(Fore.YELLOW + ">>>> Mining result confirmed!")
+                block_hash = data["block_hash"]
+                self.recieve_mining_confirmed(block_hash)
+                #self.mine_transaction(data["transaction_id"])
+
             else:
                 print(Fore.RED + ">>>> Received Unknown data type: " + str(data))
             
@@ -195,11 +201,24 @@ class P2PNode (Node):
                 self.send_to_nodes({"_type": "pop_transaction", "transaction_id": transaction_ids})
                 print(Fore.GREEN + "Block mined! " + str(mined_block.get_block_as_dict()))
 
-                transfer_trans: list[TransactionData] = self.blockchain.check_if_previous_trans_is_for_you(mined_block, miner_name)
-                self.add_amount_from_transaction(transfer_trans)
+                #transfer_trans: list[TransactionData] = self.blockchain.check_if_previous_trans_is_for_you(mined_block, miner_name)
+                #self.add_amount_from_transaction(transfer_trans)
                 
         else:
             print(Fore.RED + "Error: " + mine_result["message"])
+
+    def recieve_mining_confirmed(self, block_hash: str):
+        # Count confirmations
+        # If confirmations > 50% of nodes -> confirm
+        # If confirm -> add to blockchain
+
+        res_block = self.blockchain.get_block_by_hash(block_hash)
+        if(res_block == None):
+            print(Fore.RED + "Error: Confirmed block not found!")
+            return
+
+        transfer_trans: list[TransactionData] = self.blockchain.check_if_previous_trans_is_for_you(res_block, self.id)
+        self.add_amount_from_transaction(transfer_trans)
 
         
     def add_amount_from_transaction(self, transaction_list: list[TransactionData]):
@@ -235,6 +254,9 @@ class P2PNode (Node):
         if(res == False):
             print(Fore.RED + "Error: Block not valid!")
         else:
+            self.send_to_nodes({"_type": "mining_result_confirmed", "block_hash": tempBlock.get_hash()})
+
+            # TODO: CHANGE THIS TO BE CONFIRMED BY OTHER NODES
             if type(res) is list:
                 self.add_amount_from_transaction(res)
 
