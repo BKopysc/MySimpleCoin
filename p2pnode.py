@@ -7,16 +7,19 @@ import base58
 from blockchain import Blockchain
 from transaction_data import TransactionData
 from blockchain_block import BlockchainBlock
+from identity_manager import IdentityManager
 
 class P2PNode (Node):
     # Python class constructor
-    def __init__(self, host, port, seed_node_info=None, id=None, private_key=None, callback=None, max_connections=0):
+    def __init__(self, host, port, seed_node_info=None, id=None, private_key=None, callback=None, wallet_path="",max_connections=0):
         super(P2PNode, self).__init__(host, port, id, callback, max_connections)
         self.seed_node_info = seed_node_info
         self.private_key = private_key
         self.available_nodes = dict()
         self.nodes_connected = dict()
         self.blockchain = Blockchain()
+        self.wallet_path = wallet_path
+        self.identityManager = IdentityManager()
         self.correct_auth_signature = "auth_ok"
         self.start()
         time.sleep(1)
@@ -30,8 +33,6 @@ class P2PNode (Node):
         #self.__send_verify_signature()
         self.__send_verify_signature()
         self.__send_blockchain()
-
-        
         
     def inbound_node_connected(self, connected_node):
         #print("inbound_node_connected: " + connected_node.id)
@@ -164,18 +165,26 @@ class P2PNode (Node):
     def get_transactions(self):
         return self.blockchain.get_pending_transactions()
     
+    def send_money(self, receiver, amount):
+        owned_amount = self.identityManager.get_wallet_amount(self.wallet_path)
+        if(owned_amount < amount):
+            print(Fore.RED + "Error: Not enough money!")
+            return
+        self.add_transaction(self.id, receiver, amount)
+        self.identityManager.add_amount_to_wallet(self.wallet_path, -amount)
+    
     def add_transaction(self, sender, receiver, amount):
         transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount)
         self.blockchain.add_transaction(transaction)
         self.send_to_nodes({"_type": "new_transaction", "transaction": transaction.get_transaction_data_as_dict()}, exclude=[self.id])
 
-    def mine_transaction(self, transaction_id):
+    def mine_transaction(self, transaction_ids: list[int]):
         miner_name = self.id
         # Mine block
-        mine_result = self.blockchain.mine_pending_transactions(miner_name, [transaction_id])
+        mine_result = self.blockchain.mine_pending_transactions(miner_name, transaction_ids)
 
         if(mine_result["status"] == "success"):
-            if(self.blockchain.check_if_not_mined(transaction_id) == False):
+            if(self.blockchain.check_if_not_mined(transaction_ids) == False):
                 print(Fore.RED + "Error: Transaction already mined!")
                 return
             else:
@@ -183,10 +192,26 @@ class P2PNode (Node):
                 rewardTransaction: TransactionData = mine_result["new_transactions"]
                 self.send_to_nodes({"_type": "new_block", "block": mined_block.get_block_as_dict()}, exclude=[self.id])
                 self.send_to_nodes({"_type": "new_transaction", "transaction": rewardTransaction.get_transaction_data_as_dict()}, exclude=[self.id])
-                self.send_to_nodes({"_type": "pop_transaction", "transaction_id": [transaction_id]})
+                self.send_to_nodes({"_type": "pop_transaction", "transaction_id": transaction_ids})
                 print(Fore.GREEN + "Block mined! " + str(mined_block.get_block_as_dict()))
+
+                transfer_trans: list[TransactionData] = self.blockchain.check_if_previous_trans_is_for_you(mined_block, miner_name)
+                self.add_amount_from_transaction(transfer_trans)
+                
         else:
             print(Fore.RED + "Error: " + mine_result["message"])
+
+        
+    def add_amount_from_transaction(self, transaction_list: list[TransactionData]):
+        final_amount = 0
+
+        for transaction in transaction_list:
+            if(transaction.receiver_name == self.id):
+                final_amount += transaction.amount
+        
+        if(final_amount > 0):
+            self.identityManager.add_amount_to_wallet(self.wallet_path, final_amount)
+            print(Fore.MAGENTA + "Amount added to wallet: " + str(final_amount))
 
     def load_transaction_from_network(self, transaction_dict):
         transaction = TransactionData()
@@ -217,7 +242,8 @@ class P2PNode (Node):
         self.send_to_nodes({"_type": "new_blockchain", "blockchain": self.blockchain.get_blockchain_as_dict()})
 
     
-
+    def set_wallet_path(self,path):
+        self.wallet_path = path
     
     
 

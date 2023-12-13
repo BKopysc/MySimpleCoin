@@ -36,6 +36,9 @@ class BlockchainBlock():
         encoded = sha256(str(self.__get_dict_to_hash()).encode('utf-8')).hexdigest()
         return(encoded)
     
+    def gen_set_hash(self):
+        self.hash = self.generate_hash()
+    
     def get_hash(self):
         return(self.hash)
     
@@ -43,6 +46,12 @@ class BlockchainBlock():
         while(self.hash[0:difficulty] != '0'*difficulty):
             self.nonce += 1
             self.hash = self.generate_hash()
+
+    def update_and_get_coinbase_transaction(self, miner_name):
+        for transaction in self.transactions:
+            if(transaction.is_coinbase == True):
+                return transaction.update_and_get_coinbase_transaction(miner_name)
+        return None
 
     def load_all_from_dict(self, block_dict):
         self.nonce = block_dict["nonce"]

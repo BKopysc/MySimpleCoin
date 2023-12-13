@@ -2,9 +2,11 @@ import time
 import uuid
 import os
 from dotenv import load_dotenv
+import copy
 
 load_dotenv()
 BLOCK_REWARD = float(os.getenv("BLOCK_REWARD"))
+TRANS_FEE = float(os.getenv("FEE_PERCENT"))
 
 class TransactionData:
     def __init__(self, sender_name: str = "", receiver_name:str = "" , amount: float = 0, 
@@ -13,8 +15,11 @@ class TransactionData:
         self.is_coinbase: bool = is_coinbase
         self.sender_name = sender_name
         self.receiver_name = receiver_name
-        self.amount = amount
-        self.fees = fees
+        self.amount = amount * (1-TRANS_FEE)
+        if(fees == 0):
+            self.fees = amount * TRANS_FEE
+        else:
+            self.fees = fees
         if(timestamp == None):
             self.timestamp = time.time()
         else:
@@ -46,10 +51,21 @@ class TransactionData:
     
     def __set_coinbase_transaction(self):
         self.is_coinbase = True
-        self.sender_name = "coinbase"
+        self.sender_name = "network_coinbase"
         self.receiver_name = None
-        self.amount = self.fees + BLOCK_REWARD
+        self.amount = (self.fees + BLOCK_REWARD)
+        self.fees = 0
         self.timestamp = time.time()
+
+    def update_and_get_coinbase_transaction(self, miner_name):
+        self.receiver_name = miner_name
+        #self.is_coinbase = False
+        coinbase_copy = copy.deepcopy(self)
+        coinbase_copy.is_coinbase = False
+        coinbase_copy.amount = (self.fees + BLOCK_REWARD) * (1- TRANS_FEE)
+        coinbase_copy.fees = coinbase_copy.amount * TRANS_FEE
+        return coinbase_copy
+
 
     def get_transaction_data_as_str(self):
         #dict to str

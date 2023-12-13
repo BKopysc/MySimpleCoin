@@ -5,6 +5,6 @@ x Ustalenie protokołu wymiany danych
 x Synchronizacja węzłów
 x Osiągnięcie konsensusu (metoda proof-of-work)
 
-x Tworzenie transakcji, np. w formacie json (pierwszą transakcją w liście powinna być transakcja coinbase tworząca nowe "monety")
+o Tworzenie transakcji, np. w formacie json (pierwszą transakcją w liście powinna być transakcja coinbase tworząca nowe "monety")
 o Walidacja transakcji pod kątem double-spending
 o Obliczanie aktualnych sald na kontach

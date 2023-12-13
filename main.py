@@ -8,15 +8,18 @@ from time import sleep
 init(autoreset=True)
 identity_manager = IdentityManager()
 current_wallet = None
+wallet_path = ""
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def display_wallet_info():
+    __reload_wallet()
     print(Fore.GREEN + "\n$$$$$$$$$$$$$$$$$$$$$$$$$")
     print(Fore.GREEN + "Wallet Information:")
     print(Fore.LIGHTCYAN_EX+ f"Created at: {current_wallet['created_at']}")
     print(Fore.LIGHTCYAN_EX + f"Owner: {current_wallet['owner_name']}")
+    print(Fore.LIGHTCYAN_EX + f"Amount: {current_wallet['amount']}")
     print(Fore.LIGHTCYAN_EX + f"Private Key: {current_wallet['private_key']}")
     print(Fore.LIGHTCYAN_EX + f"Public address: {current_wallet['public_address']}")
     print(Fore.GREEN + "$$$$$$$$$$$$$$$$$$$$$$$$$")
@@ -49,9 +52,16 @@ def load_wallet():
     if(wallet_data == None ):
         return False
     global current_wallet
+    global wallet_path
     current_wallet = wallet_data
+    wallet_path = filepath
     print(Fore.GREEN + "\n$$ Wallet loaded")
     return True
+
+def __reload_wallet():
+    global current_wallet
+    global wallet_path
+    current_wallet = identity_manager.open_wallet(wallet_path)
 
 def get_input(option="Select an option", nl=True, clr=False):
     if(nl):
@@ -70,14 +80,15 @@ def node_callback(event, node, connected_node, data):
     print("Data: " + str(data))
 
 def create_node():
+    global wallet_path
     ip = get_input("Enter IP address", nl=False)
     port = get_input("Enter port", nl=False)
     node = P2PNode(ip, int(port), seed_node_info = {"ip": "127.0.0.1", "port": 6000},
         private_key = current_wallet["private_key"],
-        id = current_wallet["public_address"], callback=node_callback)
+        id = current_wallet["public_address"], callback=node_callback, wallet_path=wallet_path)
     
     while(True):
-        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING\n@Press 'b' to Show Blockchain\n"
+        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 's' to Send Money\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING\n@ Press 'b' to Show Blockchain\n@ Press 'w' to Show Wallet\n"
         net_com = get_input(text, nl=False, clr=True)
         print(Back.RESET)
 
@@ -96,16 +107,22 @@ def create_node():
             print(Back.BLUE + "@ Adding transaction....")
             tran_input = get_input("Enter sender", nl=False)
             tran_input2 = get_input("Enter receiver", nl=False)
-            tran_input3 = get_input("Enter amount", nl=False)
-            tran_input4 = get_input("Enter fees", nl=True)
+            tran_input3 = get_input("Enter amount", nl=True)
             node.add_transaction(tran_input, tran_input2, float(tran_input3))
+            print(Back.RESET)
+
+        elif(net_com == "s"):
+            print(Back.BLUE + "@ Sending money....")
+            tran_input2 = get_input("Enter receiver", nl=False)
+            tran_input3 = get_input("Enter amount", nl=True)
+            node.send_money(tran_input2, float(tran_input3))
             print(Back.RESET)
 
         elif(net_com == "m"):
             print(Back.BLUE + "@ Mining")
             mine_input = get_input("Enter transaction ID", nl=True)
             print(Back.BLUE + "!! Mining started...")
-            node.mine_transaction(int(mine_input))
+            node.mine_transaction([int(mine_input)])
             print(Back.RESET)
 
         elif(net_com == "b"):
@@ -116,6 +133,10 @@ def create_node():
         elif(net_com == "p"):
             print(Back.BLUE + "@ PING....")
             node.send_ping()
+            print(Back.RESET)
+        
+        elif(net_com == "w"):
+            display_wallet_info()
             print(Back.RESET)
 
         else:

@@ -9,7 +9,7 @@ from colorama import init, Fore, Back
 
 class IdentityManager:
 
-    wallet_pattern = ["created_at", "owner_name", "private_key", "public_address"]
+    wallet_pattern = ["created_at", "owner_name", "amount", "private_key", "public_address"]
 
     def generate_keys(self):
         private_key = SigningKey.generate(curve=SECP256k1, hashfunc=sha256)
@@ -75,11 +75,27 @@ class IdentityManager:
         wallet_dict = {}
         wallet_dict['created_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         wallet_dict['owner_name'] = owner_name.split("/")[-1]
+        wallet_dict['amount'] = 0
         priv_key, pub_key = self.generate_keys()
         wallet_dict['private_key'] = priv_key
         wallet_dict['public_address'] = pub_key.decode('utf-8')
         self.__save_wallet(owner_name, wallet_dict)
         return wallet_dict
+    
+    def add_amount_to_wallet(self, path, amount):
+        wallet = self.open_wallet(path)
+        if(wallet == None):
+            return
+        w_amount = float(wallet['amount'])
+        w_amount += float(amount)
+        wallet['amount'] = str(w_amount)
+        self.__save_wallet(wallet['owner_name'], wallet)
+
+    def get_wallet_amount(self, path):
+        wallet = self.open_wallet(path)
+        if(wallet == None):
+            return
+        return float(wallet['amount'])
 
 im = IdentityManager()
 im.generate_keys()

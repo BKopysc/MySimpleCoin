@@ -6,11 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 BLOCK_REWARD = float(os.getenv("BLOCK_REWARD"))
+BLOCK_DIFFICULTY = int(os.getenv("BLOCK_DIFFICULTY"))
 
 class Blockchain():
     def __init__(self):
         self.head = None
-        self.difficulty = 5
+        self.difficulty = BLOCK_DIFFICULTY
         self.reward = BLOCK_REWARD
         self.pending_transactions: list[TransactionData] = []
         self.previously_mined_transactions = []
@@ -19,25 +20,26 @@ class Blockchain():
     def __create_genesis_block(self):
         # Genesis block
         genesis_block = BlockchainBlock(previous_hash=None, transactions=[])
+        genesis_block.gen_set_hash()
         self.head = genesis_block
         return(self.head)
 
 
-    def add_block(self, transactions: list[TransactionData]):
+    def add_block(self, transactions_list: list[TransactionData]):
         current_block = self.get_last_block()
         if(current_block != None):
-            new_transactions = []
+            # new_transactions = []
 
-            base_fees = 0
-            for transaction in transactions:
-                base_fees += transaction.fees
-                new_transactions.append(transaction)
+            # base_fees = 0
+            # for transaction in transactions_list:
+            #     base_fees += transaction.fees
+            #     new_transactions.append(transaction)
             
-            coinbase_trans = TransactionData(is_coinbase=True, fees=base_fees)
-            # insert at start of list
-            new_transactions.insert(coinbase_trans, 0)
+            # coinbase_trans = TransactionData(is_coinbase=True, fees=base_fees)
+            # # insert at start of list
+            # new_transactions.insert(coinbase_trans, 0)
 
-            block = BlockchainBlock(previous_hash=current_block.get_hash(), transactions=new_transactions)
+            block = BlockchainBlock(previous_hash=current_block.get_hash(), transactions=transactions_list)
             self.chain.append(block)
     
     def add_received_block(self, block):
@@ -90,10 +92,10 @@ class Blockchain():
             i+=1
         return(True)
     
-    def mine_pending_transactions(self, miner_name, transaction_ids):
+    def mine_pending_transactions(self, miner_name, transaction_ids: list[int]):
 
         # Get transactions to mine
-        todo_transactions = []
+        todo_transactions: list[TransactionData] = []
         for transaction in self.pending_transactions:
             if(transaction.id in transaction_ids):
                 todo_transactions.append(transaction)
@@ -109,13 +111,25 @@ class Blockchain():
         if(len(todo_transactions) == 0):
             return(self.__return_status("error", "No transactions to mine"))
         
+        new_transactions = []
+        base_fees = 0
+        for transaction in todo_transactions:
+            base_fees += transaction.fees
+            new_transactions.append(transaction)
+        
+        # Add coinbase transaction
+        coinbase_trans = TransactionData(is_coinbase=True, fees=base_fees)
+        new_transactions.insert(0, coinbase_trans)
+        
         # Create new block and mine it
-        newBlock = BlockchainBlock(previous_hash=self.get_last_block().get_hash(), transactions=todo_transactions)
+        newBlock = BlockchainBlock(previous_hash=self.get_last_block().get_hash(), transactions=new_transactions)
         newBlock.mine_block(self.difficulty)
 
-        
+        # ---- MINING ENDED -----
+
         # Add reward transaction to pending transactions
-        rewardTransaction = TransactionData(sender_name="network", receiver_name=miner_name, amount=self.reward)
+        #rewardTransaction = TransactionData(sender_name="network", receiver_name=miner_name, amount=self.reward)
+        rewardTransaction = newBlock.update_and_get_coinbase_transaction(miner_name)
         self.pending_transactions.append(rewardTransaction)
 
         #print("Block mined!" + " miner: " + miner_name)
@@ -138,10 +152,11 @@ class Blockchain():
     def __return_status(self, status, message, block: BlockchainBlock=None, new_transactions: TransactionData=None):
         return({'status': status, 'message': message, 'block': block, 'new_transactions': new_transactions})
         
-    def check_if_not_mined(self, transaction_id):
+    def check_if_not_mined(self, transaction_ids: list[int]):
         for transaction in self.previously_mined_transactions:
-            if(transaction.id == transaction_id):
-                return(True)
+            for transaction_id in transaction_ids:
+                if(transaction.id == transaction_id):
+                    return(True)
         return(False)
     
     def validate_new_block(self, block: BlockchainBlock):
@@ -188,3 +203,14 @@ class Blockchain():
     def verify_hash_obj(self):
         b_hash = sha256(str(self.get_blockchain_as_dict()).encode('utf-8')).hexdigest()
         return(b_hash)
+    
+    def check_if_previous_trans_is_for_you(self, block: BlockchainBlock, public_address: str):
+        r_trans = []
+        for transaction in block.transactions:
+            if(transaction.is_coinbase == True):
+                continue
+            if(transaction.receiver_name == public_address):
+                r_trans.append(transaction)
+        
+        return(r_trans)
+    
