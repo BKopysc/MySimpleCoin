@@ -42,8 +42,11 @@ class Blockchain():
             block = BlockchainBlock(previous_hash=current_block.get_hash(), transactions=transactions_list)
             self.chain.append(block)
     
-    def add_received_block(self, block):
+    def add_received_block(self, block, public_address: str = ""):
+        trans_for_me: list[TransactionData] = self.check_if_previous_trans_is_for_you(block, public_address)
         self.chain.append(block)
+        return trans_for_me
+
 
     def add_transaction(self, transaction: TransactionData):
         if(transaction.id in self.pending_transactions):
@@ -159,18 +162,19 @@ class Blockchain():
                     return(True)
         return(False)
     
-    def validate_new_block(self, block: BlockchainBlock):
+    def validate_new_block(self, block: BlockchainBlock, public_address: str = ""):
         if(block.previous_hash != self.get_last_block().get_hash()):
             print("Error: Previous hash not valid")
             print(block.previous_hash)
-            print(self.get_last_block.get_hash())
-            return(False)
-        if(block.get_hash() != block.generate_hash()):
-            print("Error: Hash not valid")
+            print(self.get_last_block().get_hash())
             return(False)
         
-        self.add_received_block(block)
-        return(True)
+        #if(block.get_hash() != block.generate_hash()):
+        #    print("Error: Hash not valid")
+        #    return(False)
+        
+        tr_list = self.add_received_block(block, public_address)
+        return(tr_list)
     
     def load_all_from_dict(self, blockchain_dict):
         headBlock = BlockchainBlock()

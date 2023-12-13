@@ -231,9 +231,12 @@ class P2PNode (Node):
     def validate_and_load_new_block(self, block):
         tempBlock = BlockchainBlock()
         tempBlock.load_all_from_dict(block)
-        res = self.blockchain.validate_new_block(tempBlock)
+        res = self.blockchain.validate_new_block(tempBlock, public_address=self.id)
         if(res == False):
             print(Fore.RED + "Error: Block not valid!")
+        else:
+            if type(res) is list:
+                self.add_amount_from_transaction(res)
 
     def pop_transaction_from_network(self, transaction_id):
         self.blockchain.pop_transaction(transaction_id)

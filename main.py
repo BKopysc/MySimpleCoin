@@ -44,6 +44,8 @@ def create_wallet():
     username = get_input("Enter your username")
     global current_wallet
     current_wallet = identity_manager.create_wallet(username)
+    global wallet_path
+    wallet_path = username + ".cryptowallet"
     print(Fore.GREEN + "\n$$ Wallet created")
 
 def load_wallet():
