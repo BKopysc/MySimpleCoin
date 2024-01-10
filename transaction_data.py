@@ -10,12 +10,15 @@ TRANS_FEE = float(os.getenv("FEE_PERCENT"))
 
 class TransactionData:
     def __init__(self, sender_name: str = "", receiver_name:str = "" , amount: float = 0, 
-                 timestamp: float = None, is_coinbase: bool = False, fees: float = 0):
+                 timestamp: float = None, is_coinbase: bool = False, fees: float = 0, sender_private_key = None):
         self.id: int = uuid.uuid4().int
         self.is_coinbase: bool = is_coinbase
         self.sender_name = sender_name
         self.receiver_name = receiver_name
         self.amount = amount * (1-TRANS_FEE)
+        self.verified = False #local
+        self.signature = ""
+
         if(fees == 0):
             self.fees = amount * TRANS_FEE
         else:
@@ -24,6 +27,9 @@ class TransactionData:
             self.timestamp = time.time()
         else:
             self.timestamp = timestamp
+
+        if(sender_private_key != None):
+            self.signature = 
 
         if(is_coinbase == True):
             self.__set_coinbase_transaction()

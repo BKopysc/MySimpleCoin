@@ -71,7 +71,8 @@ class P2PNode (Node):
 
             elif(data['_type'] == "new_transaction"):
                 print(Fore.YELLOW + ">>>> New transaction received!")
-                self.load_transaction_from_network(data["transaction"])
+                res=self.load_transaction_from_network(data["transaction"])
+                self.send_trans_verify(data["transaction"]["id"], res)
 
             elif(data['_type'] == "new_block"):
                 print(Fore.YELLOW + ">>>> New block received!")
@@ -166,6 +167,9 @@ class P2PNode (Node):
         self.send_to_nodes({"_type": "disconnect"})
         print(Fore.RED + "node is requested to stop!")
 
+    def send_trans_verify(self, transaction_id, verdict: bool):
+        self.send_to_nodes({"_type": "transaction_verify", "transaction_id": transaction_id, "verdict": verdict})
+
 # ------- BLOCKCHAIN METHODS ------- #
 
     def get_transactions(self):
@@ -177,12 +181,35 @@ class P2PNode (Node):
             print(Fore.RED + "Error: Not enough money!")
             return
         self.add_transaction(self.id, receiver, amount)
-        self.identityManager.add_amount_to_wallet(self.wallet_path, -amount)
+        #self.identityManager.add_amount_to_wallet(self.wallet_path, -amount)
     
     def add_transaction(self, sender, receiver, amount):
         transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount)
         self.blockchain.add_transaction(transaction)
         self.send_to_nodes({"_type": "new_transaction", "transaction": transaction.get_transaction_data_as_dict()}, exclude=[self.id])
+
+    # Recieve transaction verification and count money
+    def recieve_transaction_verification(self, transaction_id, verdict):
+        if(verdict == True):
+            transaction = self.blockchain.get_pending_transaction_by_id(transaction_id)
+            if(transaction == None):
+                print(Fore.RED + "Error: Transaction not found! <transaction verification>")
+                return
+            
+            if(transaction.verified == True):
+                return
+            
+            if(self.blockchain.check_if_not_mined([transaction_id]) == False):
+                print(Fore.RED + "Error: Transaction already mined! <transaction verification>")
+                return
+
+            print(Fore.GREEN + "Transaction verified! <transaction verification>")
+            
+            self.identityManager.add_amount_to_wallet(self.wallet_path, -transaction.amount)
+            self.blockchain.set_pending_transaction_verify(transaction_id, True)
+        else:
+            print(Fore.RED + "Error: Transaction not verified! <transaction verification>")
+            self.blockchain.pop_transaction(transaction_id)
 
     def mine_transaction(self, transaction_ids: list[int]):
         miner_name = self.id
@@ -236,8 +263,13 @@ class P2PNode (Node):
         transaction = TransactionData()
         transaction.load_all_from_dict(transaction_dict)
         if(transaction.id in self.blockchain.get_pending_transactions()):
-            return
+            return True
+
+        if(self.blockchain.check_if_target_has_amount_in_blockchain(transaction.sender_name, transaction.amount) == False):
+            print(Fore.RED + "Error: Sender has not enough money!")
+            return False
         self.blockchain.add_transaction(transaction)
+        return True
 
     def load_blockchain_from_dict(self, blockchain_dict):
         tempBlockChain = Blockchain()

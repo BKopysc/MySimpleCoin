@@ -8,3 +8,8 @@ x Osiągnięcie konsensusu (metoda proof-of-work)
 o Tworzenie transakcji, np. w formacie json (pierwszą transakcją w liście powinna być transakcja coinbase tworząca nowe "monety")
 o Walidacja transakcji pod kątem double-spending
 o Obliczanie aktualnych sald na kontach
+
+DODAĆ 13.12.2023:
+o Przelecieć po blockchainie i sprawdzić czy danego użytkownika stać na dokonanie transakcji, 
+x dodac podpisywanie transakcji przez użytkowników i coinbase
+x Weryfikować podpisane transakcje

@@ -46,11 +46,19 @@ class Blockchain():
         trans_for_me: list[TransactionData] = self.check_if_previous_trans_is_for_you(block, public_address)
         self.chain.append(block)
         return trans_for_me
+    
+    def set_pending_transaction_verify(self, value: bool, transaction_id: int):
+        for transaction in self.pending_transactions:
+            if(transaction.id == transaction_id):
+                transaction.verified = value
+                return(self.__return_status("success", "Transaction verified"))
+        return(self.__return_status("error", "Transaction not found"))
 
 
-    def add_transaction(self, transaction: TransactionData):
+    def add_transaction(self, transaction: TransactionData, public_key: str = ""):
         if(transaction.id in self.pending_transactions):
-            return(self.__return_status("error", "Transaction already exists"))
+            return(self.__return_status("error", "Transaction already exists <send transaction>"))
+        
         self.pending_transactions.append(transaction)
 
     def pop_transaction(self, transactionId):
@@ -156,6 +164,12 @@ class Blockchain():
             temp_list.append(transaction.get_transaction_data_as_dict())
 
         return(temp_list)
+    
+    def get_pending_transaction_by_id(self, transaction_id):
+        for transaction in self.pending_transactions:
+            if(transaction.id == transaction_id):
+                return(transaction)
+        return(None)
         
     
     def __return_status(self, status, message, block: BlockchainBlock=None, new_transactions: TransactionData=None):
@@ -223,4 +237,18 @@ class Blockchain():
                 r_trans.append(transaction)
         
         return(r_trans)
+    
+    def check_if_target_has_amount_in_blockchain(self, targetId, amount):
+        target_all_amount = 0
+        for block in self.chain:
+            for transaction in block.transactions:
+                if(transaction.sender_name == targetId):
+                    target_all_amount -= transaction.amount
+                if(transaction.receiver_name == targetId):
+                    target_all_amount += transaction.amount
+
+        if(target_all_amount < amount):
+            return(False)
+        
+        return(True)
     
