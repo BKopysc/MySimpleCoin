@@ -12,7 +12,7 @@ key_util = KeyUtil()
 
 class TransactionData:
     def __init__(self, sender_name: str = "", receiver_name:str = "" , amount: float = 0, 
-                 timestamp: float = None, is_coinbase: bool = False, fees: float = 0, sender_private_key = None):
+                 timestamp: float = None, is_coinbase: bool = False, fees: float = 0):
         self.id: int = uuid.uuid4().int
         self.is_coinbase: bool = is_coinbase
         self.sender_name = sender_name
@@ -33,14 +33,16 @@ class TransactionData:
         if(is_coinbase == True):
             self.__set_coinbase_transaction()
 
-        if(sender_private_key != None):
-            self.signature = key_util.sign(sender_private_key, self.get_transaction_data_as_str())
-
+    def generate_signature(self, sender_private_key):
+        self.signature = key_util.sign(sender_private_key, self.__get_transaction_without_signature_as_str())
+    
     def set_id(self, id):
         self.id = id
 
-    def verify_signature(self, sender_public_key):
-        return key_util.verify(sender_public_key, self.signature, self.get_transaction_data_as_str())
+    def verify_signature(self):
+        if(self.is_coinbase == True):
+            return True #TODO: verify coinbase transaction
+        return key_util.verify(self.sender_name, self.signature, self.__get_transaction_without_signature_as_str())
 
     def get_transaction_data_as_dict(self):
         return({"sender_name": self.sender_name, 
@@ -70,6 +72,7 @@ class TransactionData:
         self.fees = 0
         self.timestamp = time.time()
 
+
     def update_and_get_coinbase_transaction(self, miner_name):
         self.receiver_name = miner_name
         #self.is_coinbase = False
@@ -83,6 +86,12 @@ class TransactionData:
     def get_transaction_data_as_str(self):
         #dict to str
         return(str(self.get_transaction_data_as_dict()))
+    
+    def __get_transaction_without_signature_as_str(self):
+        #dict to str
+        data = self.get_transaction_data_as_dict()
+        data.pop("signature")
+        return(str(data))
 
     
 

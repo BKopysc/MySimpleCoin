@@ -97,6 +97,9 @@ class P2PNode (Node):
                 block_hash = data["block_hash"]
                 self.recieve_mining_confirmed(block_hash)
                 #self.mine_transaction(data["transaction_id"])
+            elif(data['_type'] == "transaction_verify"):
+                print(Fore.YELLOW + ">>>> Transaction verification received!")
+                self.recieve_transaction_verification(data["transaction_id"], data["verdict"])
 
             else:
                 print(Fore.RED + ">>>> Received Unknown data type: " + str(data))
@@ -184,8 +187,9 @@ class P2PNode (Node):
         #self.identityManager.add_amount_to_wallet(self.wallet_path, -amount)
     
     def add_transaction(self, sender, receiver, amount):
-        transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount, sender_private_key=self.private_key)
-        self.blockchain.add_transaction(transaction)
+        transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount)
+        transaction.generate_signature(self.private_key)
+        #self.blockchain.add_transaction(transaction) # Will be added after verification
         self.send_to_nodes({"_type": "new_transaction", "transaction": transaction.get_transaction_data_as_dict()}, exclude=[self.id])
 
     # Recieve transaction verification and count money
@@ -205,7 +209,8 @@ class P2PNode (Node):
 
             print(Fore.GREEN + "Transaction verified! <transaction verification>")
             
-            self.identityManager.add_amount_to_wallet(self.wallet_path, -transaction.amount)
+            if(transaction.receiver_name == self.id):
+                self.identityManager.add_amount_to_wallet(self.wallet_path, -transaction.amount)
             self.blockchain.set_pending_transaction_verify(transaction_id, True)
         else:
             print(Fore.RED + "Error: Transaction not verified! <transaction verification>")
@@ -266,7 +271,7 @@ class P2PNode (Node):
         if(transaction.id in self.blockchain.get_pending_transactions()):
             return True
 
-        if(transaction.verify_signature(sender_public_key=transaction.sender_name) == False):
+        if(transaction.verify_signature() == False):
             print(transaction.get_transaction_data_as_str())
             print(Fore.RED + "Error: Transaction signature is not valid! <load transaction>")
             return False
@@ -311,6 +316,8 @@ class P2PNode (Node):
     
     def set_wallet_path(self,path):
         self.wallet_path = path
+
+
     
     
 

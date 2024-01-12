@@ -20,6 +20,8 @@ class Blockchain():
         self.forks = [] # list of lists of blocks
         self.fork_time = 4 #seconds
 
+        self.__init_test_blocks() # TODO: Remove
+
     def __create_genesis_block(self):
         # Genesis block
         genesis_block = BlockchainBlock(previous_hash=None, transactions=[])
@@ -312,7 +314,11 @@ class Blockchain():
         return(r_trans)
     
     def check_if_target_has_amount_in_blockchain(self, targetId, amount):
+        if(targetId == "network_coinbase"):
+            return(True)
+        
         target_all_amount = 0
+        
         for block in self.chain:
             for transaction in block.transactions:
                 if(transaction.sender_name == targetId):
@@ -325,3 +331,15 @@ class Blockchain():
         
         return(True)
     
+
+    def __init_test_blocks(self):
+        bk_pk = "2tgT33HdATRWwhojVujoBrQjjnQxgeJWd54dGh3K3RJobN7w5LaTiwZCYSjm7guXkaVZd75oP1ZZNhymdxReVx4X"
+        kk_pk = "2zYZbuEWvhPRaUxZRyjPxjHkRR6rgXo2FTM1HVhqBg6Fb4hDuEZv2LEF7RWJTpZYNPRtFtUP2DrTpy7CyPTTZKZP"
+
+        # Create transactions
+
+        tr1 = TransactionData(sender_name="network_coinbase", receiver_name=kk_pk, amount=100, is_coinbase=False)
+        tr2 = TransactionData(sender_name="network_coinbase", receiver_name=bk_pk, amount=100, is_coinbase=False)
+        init_block = BlockchainBlock(previous_hash=self.get_last_block().get_hash(), transactions=[tr1, tr2])
+        init_block.gen_set_hash()
+        self.chain.append(init_block)
