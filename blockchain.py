@@ -267,7 +267,7 @@ class Blockchain():
         #    return(False)
         
         tr_list = self.add_received_block(block, public_address)
-        return(self.__return_status("added", data_list=tr_list))
+        return(self.__return_status("added","New Block Added",data_list=tr_list))
     
     def load_all_from_dict(self, blockchain_dict):
         headBlock = BlockchainBlock()

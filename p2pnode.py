@@ -267,6 +267,7 @@ class P2PNode (Node):
             return True
 
         if(transaction.verify_signature(sender_public_key=transaction.sender_name) == False):
+            print(transaction.get_transaction_data_as_str())
             print(Fore.RED + "Error: Transaction signature is not valid! <load transaction>")
             return False
 
