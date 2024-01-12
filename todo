@@ -10,6 +10,13 @@ o Walidacja transakcji pod kątem double-spending
 o Obliczanie aktualnych sald na kontach
 
 DODAĆ 13.12.2023:
-o Przelecieć po blockchainie i sprawdzić czy danego użytkownika stać na dokonanie transakcji, 
+x Przelecieć po blockchainie i sprawdzić czy danego użytkownika stać na dokonanie transakcji, 
 x dodac podpisywanie transakcji przez użytkowników i coinbase
 x Weryfikować podpisane transakcje
+
+
+10.01.2024:
+o Kopanie asynchroniczne
+o Obsługa forków
+o Obsługa orphan block
+o Tworzenie forków przez złośliwego node

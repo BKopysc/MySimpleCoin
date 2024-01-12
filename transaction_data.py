@@ -3,10 +3,12 @@ import uuid
 import os
 from dotenv import load_dotenv
 import copy
+from key_util import KeyUtil 
 
 load_dotenv()
 BLOCK_REWARD = float(os.getenv("BLOCK_REWARD"))
 TRANS_FEE = float(os.getenv("FEE_PERCENT"))
+key_util = KeyUtil()
 
 class TransactionData:
     def __init__(self, sender_name: str = "", receiver_name:str = "" , amount: float = 0, 
@@ -28,14 +30,17 @@ class TransactionData:
         else:
             self.timestamp = timestamp
 
-        if(sender_private_key != None):
-            self.signature = 
-
         if(is_coinbase == True):
             self.__set_coinbase_transaction()
 
+        if(sender_private_key != None):
+            self.signature = key_util.sign(sender_private_key, self.get_transaction_data_as_str())
+
     def set_id(self, id):
         self.id = id
+
+    def verify_signature(self, sender_public_key):
+        return key_util.verify(sender_public_key, self.signature, self.get_transaction_data_as_str())
 
     def get_transaction_data_as_dict(self):
         return({"sender_name": self.sender_name, 
@@ -44,7 +49,8 @@ class TransactionData:
                 "is_coinbase": self.is_coinbase,
                 "fees": self.fees,
                 "id": self.id,
-                "timestamp": self.timestamp})
+                "timestamp": self.timestamp,
+                "signature": self.signature})
     
     def load_all_from_dict(self, transaction_dict):
         self.sender_name = transaction_dict["sender_name"]
@@ -54,6 +60,7 @@ class TransactionData:
         self.timestamp = transaction_dict["timestamp"]
         self.fees = transaction_dict["fees"]
         self.id = transaction_dict["id"]
+        self.signature = transaction_dict["signature"]
     
     def __set_coinbase_transaction(self):
         self.is_coinbase = True

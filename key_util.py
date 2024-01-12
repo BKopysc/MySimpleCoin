@@ -10,7 +10,7 @@ class KeyUtil:
 
     def sign(self, private_key: str, data):
         try:
-            sign_res = SigningKey.from_string(bytes.fromhex(private_key),hashfunc=sha256).sign(data.encode('utf-8'))
+            sign_res = SigningKey.from_string(bytes.fromhex(private_key),hashfunc=sha256, curve=SECP256k1).sign(data.encode('utf-8'))
             return base58.b58encode(sign_res).decode('utf-8')
         except:
             return None
@@ -19,7 +19,7 @@ class KeyUtil:
         try:
             public_decoded = base58.b58decode(public_key_b58)
             signature_decoded = base58.b58decode(signature)
-            verify_res = VerifyingKey.from_string(public_decoded, hashfunc=sha256).verify(signature_decoded, data.encode('utf-8'))
+            verify_res = VerifyingKey.from_string(public_decoded, hashfunc=sha256,curve=SECP256k1).verify(signature_decoded, data.encode('utf-8'))
             return verify_res
         except:
             return False
@@ -37,6 +37,14 @@ class KeyUtil:
 # print(pu)
 # data = json.dumps({"test": "test"})
 # print(data)
+# signature = ku.sign(pr, data)
+# print(signature)
+# print(ku.verify(pu, signature, data))
+
+# ku = KeyUtil()
+# pr = "0e3ad791b46d4a303acadf875c375dd2461a6944531007a1cc70648737b917b3"
+# pu = "2zYZbuEWvhPRaUxZRyjPxjHkRR6rgXo2FTM1HVhqBg6Fb4hDuEZv2LEF7RWJTpZYNPRtFtUP2DrTpy7CyPTTZKZP"
+# data = json.dumps({"test": "test"})
 # signature = ku.sign(pr, data)
 # print(signature)
 # print(ku.verify(pu, signature, data))

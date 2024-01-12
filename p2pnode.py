@@ -184,7 +184,7 @@ class P2PNode (Node):
         #self.identityManager.add_amount_to_wallet(self.wallet_path, -amount)
     
     def add_transaction(self, sender, receiver, amount):
-        transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount)
+        transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount, sender_private_key=self.private_key)
         self.blockchain.add_transaction(transaction)
         self.send_to_nodes({"_type": "new_transaction", "transaction": transaction.get_transaction_data_as_dict()}, exclude=[self.id])
 
@@ -262,12 +262,18 @@ class P2PNode (Node):
     def load_transaction_from_network(self, transaction_dict):
         transaction = TransactionData()
         transaction.load_all_from_dict(transaction_dict)
+
         if(transaction.id in self.blockchain.get_pending_transactions()):
             return True
 
-        if(self.blockchain.check_if_target_has_amount_in_blockchain(transaction.sender_name, transaction.amount) == False):
-            print(Fore.RED + "Error: Sender has not enough money!")
+        if(transaction.verify_signature(sender_public_key=transaction.sender_name) == False):
+            print(Fore.RED + "Error: Transaction signature is not valid! <load transaction>")
             return False
+
+        if(self.blockchain.check_if_target_has_amount_in_blockchain(transaction.sender_name, transaction.amount) == False):
+            print(Fore.RED + "Error: Sender has not enough money! <load transaction>")
+            return False
+        
         self.blockchain.add_transaction(transaction)
         return True
 
@@ -283,15 +289,18 @@ class P2PNode (Node):
         tempBlock = BlockchainBlock()
         tempBlock.load_all_from_dict(block)
         res = self.blockchain.validate_new_block(tempBlock, public_address=self.id)
-        if(res == False):
+        if(res['status'] == "error"):
             print(Fore.RED + "Error: Block not valid!")
-        else:
+        elif (res['status'] == "added"):
             self.send_to_nodes({"_type": "mining_result_confirmed", "block_hash": tempBlock.get_hash()})
 
             # TODO: CHANGE THIS TO BE CONFIRMED BY OTHER NODES
             if type(res) is list:
                 self.add_amount_from_transaction(res)
-
+        elif (res['status'] == "fork"):
+            print(Fore.YELLOW + "Fork detected!")
+            self.send_to_nodes({"_type": "mining_result_confirmed", "block_hash": tempBlock.get_hash()})
+        
     def pop_transaction_from_network(self, transaction_id):
         self.blockchain.pop_transaction(transaction_id)
 

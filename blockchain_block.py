@@ -28,8 +28,7 @@ class BlockchainBlock():
     
     def __get_dict_to_hash(self):
         # self to dict
-        return({ 'nonce': self.nonce, 'transactions': self.transactions,
-                 'timestamp': self.timestamp, 'previous_hash': self.previous_hash})
+        return({ 'nonce': self.nonce, 'transactions': self.transactions, 'previous_hash': self.previous_hash})
 
     def generate_hash(self):
         # sha256 hash of the block dict
@@ -46,6 +45,7 @@ class BlockchainBlock():
         while(self.hash[0:difficulty] != '0'*difficulty):
             self.nonce += 1
             self.hash = self.generate_hash()
+        self.timestamp = time.time()
 
     def update_and_get_coinbase_transaction(self, miner_name):
         for transaction in self.transactions:
