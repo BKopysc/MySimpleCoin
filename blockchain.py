@@ -160,7 +160,7 @@ class Blockchain():
 
         # Create new block and mine it
         newBlock = BlockchainBlock(previous_hash=prev_hash, transactions=new_transactions)
-        newBlock.mine_block(self.difficulty)
+        newBlock.mine_block(self.difficulty, minerId=miner_name)
 
         # ---- MINING ENDED -----
 
@@ -173,13 +173,16 @@ class Blockchain():
 
         for block in self.chain:
             if(block.get_hash() == newBlock.get_hash()):
+                return(self.__return_status("error", "Block already exists"))
+            
+            if(block.transactions == newBlock.transactions): #Check 
                 # Possible fork
                 fork_res = self.__add_block_to_forks(block)
                 if(fork_res["status"] == "no-fork"):
                     print("Error: Block already exists")
-                    return(self.__return_status("error", "Block already exists"))    
+                    return(self.__return_status("error", "Block already exists"))
                 else:
-                    return(self.__return_status("success", "Block mined and forked!", newBlock, rewardTransaction))
+                    return(fork_res)
 
         if(len(self.forks) > 0):
             # Forks exist
@@ -237,8 +240,7 @@ class Blockchain():
     
     def __add_block_to_forks(self, block: BlockchainBlock):
         for block_in_chain in self.chain:
-            if(block_in_chain.get_hash() == block.get_hash() and block_in_chain.previous_hash == block.previous_hash
-                and abs(block_in_chain.timestamp - block.timestamp) < self.fork_time):
+            if(block_in_chain.previous_hash == block.previous_hash and abs(block_in_chain.timestamp - block.timestamp) < self.fork_time):
                 # Fork possible
                 # Check if fork already exists
                 fork_check_res = self.__get_block_in_forks(block)

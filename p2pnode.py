@@ -189,7 +189,7 @@ class P2PNode (Node):
     def add_transaction(self, sender, receiver, amount):
         transaction = TransactionData(sender_name=sender, receiver_name=receiver, amount=amount)
         transaction.generate_signature(self.private_key)
-        #self.blockchain.add_transaction(transaction) # Will be added after verification
+        self.blockchain.add_transaction(transaction) # Will be added after verification
         self.send_to_nodes({"_type": "new_transaction", "transaction": transaction.get_transaction_data_as_dict()}, exclude=[self.id])
 
     # Recieve transaction verification and count money
@@ -221,21 +221,20 @@ class P2PNode (Node):
         # Mine block
         mine_result = self.blockchain.mine_pending_transactions(miner_name, transaction_ids)
 
-        if(mine_result["status"] == "success"):
-            if(self.blockchain.check_if_not_mined(transaction_ids) == False):
-                print(Fore.RED + "Error: Transaction already mined!")
-                return
-            else:
-                mined_block: BlockchainBlock = mine_result["block"]
-                rewardTransaction: TransactionData = mine_result["new_transactions"]
-                self.send_to_nodes({"_type": "new_block", "block": mined_block.get_block_as_dict()}, exclude=[self.id])
-                self.send_to_nodes({"_type": "new_transaction", "transaction": rewardTransaction.get_transaction_data_as_dict()}, exclude=[self.id])
-                self.send_to_nodes({"_type": "pop_transaction", "transaction_id": transaction_ids})
-                print(Fore.GREEN + "Block mined! " + str(mined_block.get_block_as_dict()))
+        if(mine_result["status"] == "success" or mine_result["status"] == "fork"):
+            # if(self.blockchain.check_if_not_mined(transaction_ids) == False):
+            #     print(Fore.RED + "Error: Transaction already mined!")
+            #     return
+            # else:
+            mined_block: BlockchainBlock = mine_result["block"]
+            rewardTransaction: TransactionData = mine_result["new_transactions"]
+            self.send_to_nodes({"_type": "new_block", "block": mined_block.get_block_as_dict()}, exclude=[self.id])
+            self.send_to_nodes({"_type": "new_transaction", "transaction": rewardTransaction.get_transaction_data_as_dict()}, exclude=[self.id])
+            self.send_to_nodes({"_type": "pop_transaction", "transaction_id": transaction_ids})
+            print(Fore.GREEN + "Block mined! " + str(mined_block.get_block_as_dict()))
 
                 #transfer_trans: list[TransactionData] = self.blockchain.check_if_previous_trans_is_for_you(mined_block, miner_name)
                 #self.add_amount_from_transaction(transfer_trans)
-                
         else:
             print(Fore.RED + "Error: " + mine_result["message"])
 
@@ -316,6 +315,7 @@ class P2PNode (Node):
     
     def set_wallet_path(self,path):
         self.wallet_path = path
+
 
 
     
