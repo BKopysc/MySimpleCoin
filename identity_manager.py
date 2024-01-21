@@ -9,7 +9,7 @@ from colorama import init, Fore, Back
 
 class IdentityManager:
 
-    wallet_pattern = ["created_at", "owner_name", "amount", "private_key", "public_address"]
+    wallet_pattern = ["created_at", "owner_name", "amount", "private_key", "public_address", "password"]
 
     def generate_keys(self):
         private_key = SigningKey.generate(curve=SECP256k1, hashfunc=sha256)
@@ -43,7 +43,7 @@ class IdentityManager:
     def __ripemd160(data):
         return new('ripemd160', data)
 
-    def open_wallet(self, file_path):
+    def open_wallet(self, file_path, password):
         try:
             with open(file_path, "r") as json_file:
                 data = json.load(json_file)
@@ -63,6 +63,12 @@ class IdentityManager:
                 print(Back.RED + "Private key and public key are not related!")
                 return None
             
+            data_password = data['password']
+
+            if(self.__hash_password(password) != data_password):
+                print(Back.RED + "Wrong password!")
+                return None
+            
             return data
         except FileNotFoundError:
             print(Back.RED + f"File '{file_path}' not found.")
@@ -71,7 +77,7 @@ class IdentityManager:
             print(Back.RED + f"Error decoding CryptoWallet: {e}")
             return None
 
-    def create_wallet(self, owner_name):
+    def create_wallet(self, owner_name, password):
         wallet_dict = {}
         wallet_dict['created_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         wallet_dict['owner_name'] = owner_name.split("/")[-1]
@@ -79,6 +85,8 @@ class IdentityManager:
         priv_key, pub_key = self.generate_keys()
         wallet_dict['private_key'] = priv_key
         wallet_dict['public_address'] = pub_key.decode('utf-8')
+        #Hashed password sha256
+        wallet_dict['password'] = self.__hash_password(password)
         self.__save_wallet(owner_name, wallet_dict)
         return wallet_dict
     
@@ -96,6 +104,9 @@ class IdentityManager:
         if(wallet == None):
             return
         return float(wallet['amount'])
+    
+    def __hash_password(self, password):
+        return new('sha256', password.encode('utf-8')).hexdigest()
 
 im = IdentityManager()
 im.generate_keys()

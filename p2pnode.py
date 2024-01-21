@@ -11,9 +11,8 @@ from identity_manager import IdentityManager
 
 class P2PNode (Node):
     # Python class constructor
-    def __init__(self, host, port, seed_node_info=None, id=None, private_key=None, callback=None, wallet_path="",max_connections=0):
+    def __init__(self, host, port, id=None, private_key=None, callback=None, wallet_path="",max_connections=0):
         super(P2PNode, self).__init__(host, port, id, callback, max_connections)
-        self.seed_node_info = seed_node_info
         self.private_key = private_key
         self.available_nodes = dict()
         self.nodes_connected = dict()
@@ -24,19 +23,16 @@ class P2PNode (Node):
         self.start()
         time.sleep(1)
 
-        if(seed_node_info is not None):
-            self.connect_with_node(seed_node_info["ip"], seed_node_info["port"])
-            time.sleep(1)
         
     def outbound_node_connected(self, connected_node):
-        #print("outbound_node_connected: " + connected_node.id)
+        print("outbound_node_connected: " + connected_node.id)
         #self.__send_verify_signature()
         self.__send_verify_signature()
-        self.__send_blockchain()
         
     def inbound_node_connected(self, connected_node):
-        #print("inbound_node_connected: " + connected_node.id)
-        #self.__send_verify_signature()
+        print("inbound_node_connected: " + connected_node.id)
+        self.__send_verify_signature()
+        self.__send_blockchain()
         pass
 
     def inbound_node_disconnected(self, connected_node):
@@ -126,7 +122,7 @@ class P2PNode (Node):
         #weryfikacja podpisu
         decrypted_public_key = self.__base58_to_bytes(public_address)
         public_key = VerifyingKey.from_string(decrypted_public_key, curve=SECP256k1, hashfunc=sha256)
-        print("\nSignature: " + signature + "\n")
+        #print("\nSignature: " + signature + "\n")
         try:
             public_key.verify(self.__hex_to_bytes(signature), self.correct_auth_signature.encode('utf-8'), sha256)
             return True

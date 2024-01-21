@@ -14,7 +14,8 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def display_wallet_info():
-    __reload_wallet()
+    pass_input = get_input("Enter your password", nl=False)
+    __reload_wallet(pass_input)
     print(Fore.GREEN + "\n$$$$$$$$$$$$$$$$$$$$$$$$$")
     print(Fore.GREEN + "Wallet Information:")
     print(Fore.LIGHTCYAN_EX+ f"Created at: {current_wallet['created_at']}")
@@ -35,22 +36,24 @@ def main_menu():
 def wallet_menu():
     print("\n-----------")
     print("1. Create new node")
-    print("2. Connect to a node")
-    print("3. Show wallet information")
-    print(Fore.RED + "4. Quit")
+    # print("2. Connect to a node")
+    print("2. Show wallet information")
+    print(Fore.RED + "3. Quit")
     print("-----------\n")
 
 def create_wallet():
     username = get_input("Enter your username")
+    password = get_input("Enter your password")
     global current_wallet
-    current_wallet = identity_manager.create_wallet(username)
+    current_wallet = identity_manager.create_wallet(username, password)
     global wallet_path
     wallet_path = username + ".cryptowallet"
     print(Fore.GREEN + "\n$$ Wallet created")
 
 def load_wallet():
-    filepath = get_input("Enter file path", nl=False)
-    wallet_data = identity_manager.open_wallet(filepath)
+    filepath = get_input("Enter file path")
+    password = get_input("Enter your password", nl=False)
+    wallet_data = identity_manager.open_wallet(filepath, password)
     if(wallet_data == None ):
         return False
     global current_wallet
@@ -60,10 +63,10 @@ def load_wallet():
     print(Fore.GREEN + "\n$$ Wallet loaded")
     return True
 
-def __reload_wallet():
+def __reload_wallet(password):
     global current_wallet
     global wallet_path
-    current_wallet = identity_manager.open_wallet(wallet_path)
+    current_wallet = identity_manager.open_wallet(wallet_path, password)
 
 def get_input(option="Select an option", nl=True, clr=False):
     if(nl):
@@ -83,15 +86,15 @@ def node_callback(event, node, connected_node, data):
 
 def create_node():
     global wallet_path
-    ip = get_input("Enter IP address", nl=False)
-    port = get_input("Enter port", nl=False)
+    ip = get_input("Enter your IP address", nl=False)
+    port = get_input("Enter your port", nl=False)
     id = current_wallet["public_address"]
-    node = P2PNode(ip, int(port), seed_node_info = {"ip": "127.0.0.1", "port": 6000},
+    node = P2PNode(ip, int(port),
         private_key = current_wallet["private_key"],
         id = current_wallet["public_address"], callback=node_callback, wallet_path=wallet_path)
     
     while(True):
-        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 't' to Show Transactions\n@ Press 'a' to Add Transaction\n@ Press 's' to Send Money\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING\n@ Press 'b' to Show Blockchain\n@ Press 'w' to Show Wallet\n"
+        text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 'n' to Connect to Nodes\n@ Press 't' to Show Transactions\n@ Press 's' to Send Money\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING\n@ Press 'b' to Show Blockchain\n@ Press 'w' to Show Wallet\n"
         net_com = get_input(text, nl=False, clr=True)
         print(Back.RESET)
 
@@ -100,19 +103,29 @@ def create_node():
             print(Back.RESET)
             break
 
+        if(net_com == "n"):
+            node_ip = get_input("Enter node IP", nl=False)
+            node_port = get_input("Enter node port", nl=False)
+            try:
+                node.connect_to_new_node(node_ip, int(node_port))
+            except:
+                print(Back.RED + "@ Connection failed!")
+                print(Back.RESET)
+                continue
+
         elif(net_com == "t"):
             print(Back.BLUE + "@ Showing transactions....")
             trans = node.get_transactions()
             print(Back.BLACK + str(trans))
             print(Back.RESET)
 
-        elif(net_com == "a"):
-            print(Back.BLUE + "@ Adding transaction....")
-            tran_input = get_input("Enter sender", nl=False)
-            tran_input2 = get_input("Enter receiver", nl=False)
-            tran_input3 = get_input("Enter amount", nl=True)
-            node.add_transaction(tran_input, tran_input2, float(tran_input3))
-            print(Back.RESET)
+        # elif(net_com == "a"):
+        #     print(Back.BLUE + "@ Adding transaction....")
+        #     tran_input = get_input("Enter sender", nl=False)
+        #     tran_input2 = get_input("Enter receiver", nl=False)
+        #     tran_input3 = get_input("Enter amount", nl=True)
+        #     node.add_transaction(tran_input, tran_input2, float(tran_input3))
+        #     print(Back.RESET)
 
         elif(net_com == "s"):
             print(Back.BLUE + "@ Sending money....")
@@ -187,11 +200,11 @@ while True: #==== MAIN MENU ====#
 
         if choice == "1": #----- CREATE NEW NODE -----#
             create_node()
-        elif choice == "2": #----- CONNECT TO NEW NODE ---- #
-            connect_to_node()
-        elif choice == "3": #----- DISPLAY WALLET INFO -----#
+        # elif choice == "2": #----- CONNECT TO NEW NODE ---- #
+        #     connect_to_node()
+        elif choice == "2": #----- DISPLAY WALLET INFO -----#
             display_wallet_info()
-        elif choice == "4": #----- QUIT -----#
+        elif choice == "3": #----- QUIT -----#
             quit()
         else:
             print(Back.RED + "Invalid choice. Please select a valid option.")
