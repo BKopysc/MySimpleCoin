@@ -54,6 +54,11 @@ class BlockchainBlock():
             if(transaction.is_coinbase == True):
                 return transaction.update_and_get_coinbase_transaction(miner_name)
         return None
+    
+    def add_reward_transaction(self, miner_name):
+        rewardTransaction = TransactionData()
+        rewardTransaction.set_reward_transaction()
+        self.transactions.append(rewardTransaction)
 
     def load_all_from_dict(self, block_dict):
         self.nonce = block_dict["nonce"]

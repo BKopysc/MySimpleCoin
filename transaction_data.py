@@ -7,7 +7,7 @@ from key_util import KeyUtil
 
 load_dotenv()
 BLOCK_REWARD = float(os.getenv("BLOCK_REWARD"))
-TRANS_FEE = float(os.getenv("FEE_PERCENT"))
+TRANS_FEE = 0 #float(os.getenv("FEE_PERCENT"))
 key_util = KeyUtil()
 
 class TransactionData:
@@ -81,6 +81,13 @@ class TransactionData:
         coinbase_copy.amount = (self.fees + BLOCK_REWARD) * (1- TRANS_FEE)
         coinbase_copy.fees = coinbase_copy.amount * TRANS_FEE
         return coinbase_copy
+    
+    def set_reward_transaction(self):
+        self.is_coinbase = True
+        self.sender_name = "network_coinbase"
+        self.amount = (self.fees + BLOCK_REWARD)
+        self.fees = 0
+        self.timestamp = time.time()
 
 
     def get_transaction_data_as_str(self):

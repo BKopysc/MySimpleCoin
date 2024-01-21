@@ -11,13 +11,14 @@ from identity_manager import IdentityManager
 
 class P2PNode (Node):
     # Python class constructor
-    def __init__(self, host, port, id=None, private_key=None, callback=None, wallet_path="",max_connections=0):
+    def __init__(self, host, port, id=None, private_key=None, callback=None, wallet_path="",max_connections=0, wallet_hash=""):
         super(P2PNode, self).__init__(host, port, id, callback, max_connections)
         self.private_key = private_key
         self.available_nodes = dict()
         self.nodes_connected = dict()
         self.blockchain = Blockchain()
         self.wallet_path = wallet_path
+        self.wallet_hash = wallet_hash
         self.identityManager = IdentityManager()
         self.correct_auth_signature = "auth_ok"
         self.start()
@@ -175,8 +176,8 @@ class P2PNode (Node):
         return self.blockchain.get_pending_transactions()
     
     def send_money(self, receiver, amount):
-        owned_amount = self.identityManager.get_wallet_amount(self.wallet_path)
-        if(owned_amount < amount):
+        #owned_amount = self.identityManager.get_wallet_amount(self.wallet_path, self.wallet_hash)
+        if(self.blockchain.check_if_target_has_amount_in_blockchain(self.id, amount) == False):
             print(Fore.RED + "Error: Not enough money!")
             return
         self.add_transaction(self.id, receiver, amount)
@@ -199,14 +200,14 @@ class P2PNode (Node):
             if(transaction.verified == True):
                 return
             
-            if(self.blockchain.check_if_not_mined([transaction_id]) == False):
+            if(self.blockchain.check_if_not_mined([transaction_id]) == True):
                 print(Fore.RED + "Error: Transaction already mined! <transaction verification>")
                 return
 
             print(Fore.GREEN + "Transaction verified! <transaction verification>")
             
-            if(transaction.receiver_name == self.id):
-                self.identityManager.add_amount_to_wallet(self.wallet_path, -transaction.amount)
+            #if(transaction.receiver_name == self.id):
+            #    self.identityManager.add_amount_to_wallet(self.wallet_path, -transaction.amount)
             self.blockchain.set_pending_transaction_verify(transaction_id, True)
         else:
             print(Fore.RED + "Error: Transaction not verified! <transaction verification>")
@@ -223,9 +224,8 @@ class P2PNode (Node):
             #     return
             # else:
             mined_block: BlockchainBlock = mine_result["block"]
-            rewardTransaction: TransactionData = mine_result["new_transactions"]
             self.send_to_nodes({"_type": "new_block", "block": mined_block.get_block_as_dict()}, exclude=[self.id])
-            self.send_to_nodes({"_type": "new_transaction", "transaction": rewardTransaction.get_transaction_data_as_dict()}, exclude=[self.id])
+            #self.send_to_nodes({"_type": "new_transaction", "transaction": rewardTransaction.get_transaction_data_as_dict()}, exclude=[self.id])
             self.send_to_nodes({"_type": "pop_transaction", "transaction_id": transaction_ids})
             print(Fore.GREEN + "Block mined! " + str(mined_block.get_block_as_dict()))
 
@@ -256,7 +256,7 @@ class P2PNode (Node):
                 final_amount += transaction.amount
         
         if(final_amount > 0):
-            self.identityManager.add_amount_to_wallet(self.wallet_path, final_amount)
+            #self.identityManager.add_amount_to_wallet(self.wallet_path, final_amount)
             print(Fore.MAGENTA + "Amount added to wallet: " + str(final_amount))
 
     def load_transaction_from_network(self, transaction_dict):

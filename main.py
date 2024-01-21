@@ -14,8 +14,8 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def display_wallet_info():
-    pass_input = get_input("Enter your password", nl=False)
-    __reload_wallet(pass_input)
+    #pass_input = get_input("Enter your password", nl=False)
+    __reload_wallet()
     print(Fore.GREEN + "\n$$$$$$$$$$$$$$$$$$$$$$$$$")
     print(Fore.GREEN + "Wallet Information:")
     print(Fore.LIGHTCYAN_EX+ f"Created at: {current_wallet['created_at']}")
@@ -47,7 +47,7 @@ def create_wallet():
     global current_wallet
     current_wallet = identity_manager.create_wallet(username, password)
     global wallet_path
-    wallet_path = username + ".cryptowallet"
+    wallet_path = username + ".cwallet"
     print(Fore.GREEN + "\n$$ Wallet created")
 
 def load_wallet():
@@ -63,10 +63,11 @@ def load_wallet():
     print(Fore.GREEN + "\n$$ Wallet loaded")
     return True
 
-def __reload_wallet(password):
+def __reload_wallet():
     global current_wallet
     global wallet_path
-    current_wallet = identity_manager.open_wallet(wallet_path, password)
+    current_hash = current_wallet['password']
+    current_wallet = identity_manager.open_wallet(wallet_path, current_hash, is_pass_hashed=True)
 
 def get_input(option="Select an option", nl=True, clr=False):
     if(nl):
@@ -91,7 +92,8 @@ def create_node():
     id = current_wallet["public_address"]
     node = P2PNode(ip, int(port),
         private_key = current_wallet["private_key"],
-        id = current_wallet["public_address"], callback=node_callback, wallet_path=wallet_path)
+        id = current_wallet["public_address"], callback=node_callback, wallet_path=wallet_path, 
+        wallet_hash=current_wallet["password"])
     
     while(True):
         text = Fore.WHITE + "@ Press 'q' to quit\n@ Press 'n' to Connect to Nodes\n@ Press 't' to Show Transactions\n@ Press 's' to Send Money\n@ Press 'm' to Mine Transaction ID\n@ Press 'p' to PING\n@ Press 'b' to Show Blockchain\n@ Press 'w' to Show Wallet\n"

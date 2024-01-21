@@ -16,9 +16,6 @@ class Blockchain():
         self.pending_transactions: list[TransactionData] = []
         self.previously_mined_transactions = []
         self.chain = [self.__create_genesis_block()]
-        self.orphaned_blocks = []
-        self.forks = [] # list of lists of blocks
-        self.fork_time = 4 #seconds
 
         self.__init_test_blocks() # TODO: Remove
 
@@ -33,17 +30,6 @@ class Blockchain():
     def add_block(self, transactions_list: list[TransactionData]):
         current_block = self.get_last_block()
         if(current_block != None):
-            # new_transactions = []
-
-            # base_fees = 0
-            # for transaction in transactions_list:
-            #     base_fees += transaction.fees
-            #     new_transactions.append(transaction)
-            
-            # coinbase_trans = TransactionData(is_coinbase=True, fees=base_fees)
-            # # insert at start of list
-            # new_transactions.insert(coinbase_trans, 0)
-
             block = BlockchainBlock(previous_hash=current_block.get_hash(), transactions=transactions_list)
             self.chain.append(block)
     
@@ -89,15 +75,11 @@ class Blockchain():
             "difficulty": self.difficulty,
             "reward": self.reward,
             "pending_transactions": [],
-            "chain": [],
-            "orphaned_blocks": []
+            "chain": []
         }
         
         for block in self.chain:
             blockchain_dict["chain"].append(block.get_block_as_dict())
-        
-        for block in self.orphaned_blocks:
-            blockchain_dict["orphaned_blocks"].append(block.get_block_as_dict())
         
         for transaction in self.pending_transactions:
             blockchain_dict["pending_transactions"].append(transaction.get_transaction_data_as_dict())
@@ -149,57 +131,29 @@ class Blockchain():
         
         prev_hash = ""
 
-        if(len(self.forks) > 0):
-            # Forks exist
-            # Get last block of fork
-            last_block: BlockchainBlock = self.forks[-1][-1]
-            prev_hash = last_block.get_hash()
-        else:
-            # No forks
-            prev_hash = self.get_last_block().get_hash()
+        prev_hash = self.get_last_block().get_hash()
 
         # Create new block and mine it
+
         newBlock = BlockchainBlock(previous_hash=prev_hash, transactions=new_transactions)
+        newBlock.add_reward_transaction(miner_name)
         newBlock.mine_block(self.difficulty, minerId=miner_name)
 
         # ---- MINING ENDED -----
 
         # Add reward transaction to pending transactions
         #rewardTransaction = TransactionData(sender_name="network", receiver_name=miner_name, amount=self.reward)
-        rewardTransaction = newBlock.update_and_get_coinbase_transaction(miner_name) #TODO: Add after no fork
-        self.pending_transactions.append(rewardTransaction)
+
 
         #print("Block mined!" + " miner: " + miner_name)
 
         for block in self.chain:
             if(block.get_hash() == newBlock.get_hash()):
                 return(self.__return_status("error", "Block already exists"))
-            
-            if(block.transactions == newBlock.transactions): #Check 
-                # Possible fork
-                fork_res = self.__add_block_to_forks(block)
-                if(fork_res["status"] == "no-fork"):
-                    print("Error: Block already exists")
-                    return(self.__return_status("error", "Block already exists"))
-                else:
-                    return(fork_res)
 
-        if(len(self.forks) > 0):
-            # Forks exist
-            # Get last block of fork and add it to chain
-            # Add other blocks to orphaned blocks
-            # Remove fork from forks
-            last_blocks_arr = self.forks[-1]
-            last_block: BlockchainBlock = last_blocks_arr[-1]
-            other_blocks = last_blocks_arr[:-1]
-            self.chain.append(last_block)
-            for orphan_block in other_blocks:
-                self.orphaned_blocks.append(orphan_block)
-            self.forks.remove(last_blocks_arr)
-        else:
-            self.chain.append(newBlock)
+        self.chain.append(newBlock)
 
-        return(self.__return_status("success", "Block mined!", newBlock, rewardTransaction))
+        return(self.__return_status("success", "Block mined!", newBlock))
 
     def get_pending_transactions(self):
         temp_list = []
@@ -225,46 +179,10 @@ class Blockchain():
                     return(True)
         return(False)
     
-    def __get_block_in_forks(self, block: BlockchainBlock):
-        # Get Array index of block
-        id_forks = 0
-        id_block = 0
-        for blocks_forks in self.forks:
-            for block_fork in blocks_forks:
-                if(block_fork.get_hash() == block.get_hash()):
-                    return([id_forks, id_block])
-                id_block += 1
-            id_forks += 1
-        
-        return(None)
-    
-    def __add_block_to_forks(self, block: BlockchainBlock):
-        for block_in_chain in self.chain:
-            if(block_in_chain.previous_hash == block.previous_hash and abs(block_in_chain.timestamp - block.timestamp) < self.fork_time):
-                # Fork possible
-                # Check if fork already exists
-                fork_check_res = self.__get_block_in_forks(block)
-                if(fork_check_res != None):
-                    # Fork exists
-                    return(self.__return_status("error", "Fork already exists"))
-                else:
-                    self.forks.append([block, block_in_chain])
-                    self.chain.remove(block_in_chain)
-                return(self.__return_status("fork", "Fork possible"))
-        return(self.__return_status("no-fork", "No fork possible"))
-    
     def validate_new_block(self, block: BlockchainBlock, public_address: str = ""):
-
         # Check if there is a fork possible
         if(block.previous_hash != self.get_last_block().get_hash()):
-            res = self.__add_block_to_forks(block)
-            if(res["status"] == "no-fork"):
-                print("Error: Previous hash not valid")
-                print(block.previous_hash)
-                print(self.get_last_block().get_hash())
-                return(self.__return_status("error", "Previous hash not valid"))
-
-            return(res)
+            return(self.__return_status("error", "Previous hash not valid"))
         
         #if(block.get_hash() != block.generate_hash()): # TODO: Try
         #    print("Error: Hash not valid")
@@ -335,13 +253,13 @@ class Blockchain():
     
 
     def __init_test_blocks(self):
-        bk_pk = "2tgT33HdATRWwhojVujoBrQjjnQxgeJWd54dGh3K3RJobN7w5LaTiwZCYSjm7guXkaVZd75oP1ZZNhymdxReVx4X"
-        kk_pk = "2zYZbuEWvhPRaUxZRyjPxjHkRR6rgXo2FTM1HVhqBg6Fb4hDuEZv2LEF7RWJTpZYNPRtFtUP2DrTpy7CyPTTZKZP"
+        t1_pk = "2d6Yy7staqEq61NSyYygkdMoXqQWRir6HNU8Zk3CNwGz3FWowHB2MWuLf8W3yHasJJhm2TQMsQVivn74bND21oxp"
+        t2_pk = "4S7SfGT9UmtKEnLG2fhGsoaKQ5mbPpdbh6qbTvUZEgojJZ9EY2zxLwVBB3QX7z9pR4FZVxETwbSyn6nJHgyV4GFP"
 
         # Create transactions
 
-        tr1 = TransactionData(sender_name="network_coinbase", receiver_name=kk_pk, amount=100, is_coinbase=False)
-        tr2 = TransactionData(sender_name="network_coinbase", receiver_name=bk_pk, amount=100, is_coinbase=False)
+        tr1 = TransactionData(sender_name="network_coinbase", receiver_name=t1_pk, amount=100, is_coinbase=False)
+        tr2 = TransactionData(sender_name="network_coinbase", receiver_name=t2_pk, amount=100, is_coinbase=False)
         init_block = BlockchainBlock(previous_hash=self.get_last_block().get_hash(), transactions=[tr1, tr2])
         init_block.gen_set_hash()
         self.chain.append(init_block)
